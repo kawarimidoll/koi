@@ -6,6 +6,10 @@ use crossterm::terminal::{
 use crossterm::{queue, Command};
 use std::io::{stdout, Error};
 
+pub struct Size {
+    pub width: usize,
+    pub height: usize,
+}
 #[derive(Default)]
 pub struct Position {
     pub row: usize,
@@ -42,6 +46,12 @@ impl Terminal {
     }
     pub fn move_caret_to(position: Position) -> Result<(), Error> {
         Self::queue_command(MoveTo(position.col as u16, position.row as u16))
+    }
+    pub fn size() -> Result<Size, Error> {
+        let (width16, height16) = size()?;
+        let width = width16 as usize;
+        let height = height16 as usize;
+        Ok(Size { width, height })
     }
     pub fn execute() -> Result<(), Error> {
         stdout().flush()
