@@ -1,10 +1,11 @@
 use crossterm::event::{
     read,
     Event::{self, Key},
-    KeyCode::Char,
+    KeyCode::{self, Char, Down, End, Home, Left, PageDown, PageUp, Right, Up},
+    KeyEvent,
 };
 use std::io::Error;
-use terminal::Position;
+use terminal::{Position, Size};
 
 use terminal::Terminal;
 mod terminal;
@@ -29,7 +30,7 @@ impl Editor {
             }
             match read() {
                 Ok(event) => {
-                    self.handle_event(event)?;
+                    self.handle_event(&event)?;
                 }
                 Err(err) => {
                     let height = Terminal::size()?.height;
@@ -42,15 +43,23 @@ impl Editor {
         Terminal::print_row(0, "Goodbye, koi!\r\n")?;
         Ok(())
     }
-    fn handle_event(&mut self, event: Event) -> Result<(), Error> {
+    fn handle_event(&mut self, event: &Event) -> Result<(), Error> {
         let height = Terminal::size()?.height;
         Terminal::print_row(height - 1, &format!("{event:?}"))?;
-        match event {
-            Key(event) => match event.code {
-                Char('q') => self.should_quit = true,
+        if let Key(KeyEvent {
+            code, modifiers, ..
+        }) = event
+        {
+            match code {
+                Char('q') if *modifiers == crossterm::event::KeyModifiers::NONE => {
+                    self.should_quit = true
+                }
+
+                Left | Down | Right | Up | Home | End | PageDown | PageUp => {
+                    self.move_position(*code)?;
+                }
                 _ => (),
-            },
-            _ => (),
+            }
         }
         Ok(())
     }
@@ -62,6 +71,21 @@ impl Editor {
             Terminal::move_caret_to(self.cursor_position)?;
         }
         Terminal::execute()?;
+        Ok(())
+    }
+    fn move_position(&mut self, code: KeyCode) -> Result<(), Error> {
+        let Size { width, height } = Terminal::size()?;
+        match code {
+            Left if self.cursor_position.col > 0 => self.cursor_position.col -= 1,
+            Right if self.cursor_position.col < width => self.cursor_position.col += 1,
+            Up if self.cursor_position.row > 0 => self.cursor_position.row -= 1,
+            Down if self.cursor_position.row < height => self.cursor_position.row += 1,
+            Home => self.cursor_position.col = 0,
+            End => self.cursor_position.col = width,
+            PageUp => self.cursor_position.row = 0,
+            PageDown => self.cursor_position.row = height,
+            _ => (),
+        };
         Ok(())
     }
 }
