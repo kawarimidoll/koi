@@ -1,8 +1,8 @@
 use crossterm::cursor::MoveTo;
 use crossterm::style::Print;
 use crossterm::terminal::{
-    disable_raw_mode, enable_raw_mode, size, Clear, ClearType, EnterAlternateScreen,
-    LeaveAlternateScreen,
+    disable_raw_mode, enable_raw_mode, size, Clear, ClearType, DisableLineWrap, EnableLineWrap,
+    EnterAlternateScreen, LeaveAlternateScreen,
 };
 use crossterm::{queue, Command};
 use std::io::{stdout, Error, Write};
@@ -23,6 +23,7 @@ impl Terminal {
     pub fn initialize() -> Result<(), Error> {
         enable_raw_mode()?;
         Self::enter_alternate_screen()?;
+        Self::disable_line_wrap()?;
         Self::clear_screen()?;
         Self::move_caret_to(Position::default())?;
         Self::execute()?;
@@ -30,6 +31,7 @@ impl Terminal {
     }
     pub fn terminate() -> Result<(), Error> {
         Self::leave_alternate_screen()?;
+        Self::enable_line_wrap()?;
         Self::execute()?;
         disable_raw_mode()?;
         Ok(())
@@ -40,6 +42,14 @@ impl Terminal {
     }
     pub fn leave_alternate_screen() -> Result<(), Error> {
         Self::queue_command(LeaveAlternateScreen)?;
+        Ok(())
+    }
+    fn enable_line_wrap() -> Result<(), Error> {
+        Self::queue_command(EnableLineWrap)?;
+        Ok(())
+    }
+    fn disable_line_wrap() -> Result<(), Error> {
+        Self::queue_command(DisableLineWrap)?;
         Ok(())
     }
     pub fn clear_screen() -> Result<(), Error> {
