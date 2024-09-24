@@ -11,7 +11,7 @@ pub struct Size {
     pub width: usize,
     pub height: usize,
 }
-#[derive(Default)]
+#[derive(Clone, Copy, Default)]
 pub struct Position {
     pub row: usize,
     pub col: usize,
@@ -48,7 +48,8 @@ impl Terminal {
     pub fn clear_line() -> Result<(), Error> {
         Self::queue_command(Clear(ClearType::UntilNewLine))
     }
-    pub fn move_caret_to(position: Position) -> Result<(), Error> {
+    fn move_caret_to(position: Position) -> Result<(), Error> {
+        #[allow(clippy::as_conversions, clippy::cast_possible_truncation)]
         Self::queue_command(MoveTo(position.col as u16, position.row as u16))
     }
     pub fn print(string: &str) -> Result<(), Error> {
@@ -59,6 +60,7 @@ impl Terminal {
         Self::clear_line()?;
         Self::print(line_text)
     }
+    #[allow(clippy::as_conversions)]
     pub fn size() -> Result<Size, Error> {
         let (width16, height16) = size()?;
         let width = width16 as usize;
