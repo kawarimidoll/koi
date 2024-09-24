@@ -25,7 +25,6 @@ impl Terminal {
         Self::enter_alternate_screen()?;
         Self::disable_line_wrap()?;
         Self::clear_screen()?;
-        Self::move_caret_to(Position::default())?;
         Self::execute()?;
         Ok(())
     }
@@ -36,11 +35,11 @@ impl Terminal {
         disable_raw_mode()?;
         Ok(())
     }
-    pub fn enter_alternate_screen() -> Result<(), Error> {
+    fn enter_alternate_screen() -> Result<(), Error> {
         Self::queue_command(EnterAlternateScreen)?;
         Ok(())
     }
-    pub fn leave_alternate_screen() -> Result<(), Error> {
+    fn leave_alternate_screen() -> Result<(), Error> {
         Self::queue_command(LeaveAlternateScreen)?;
         Ok(())
     }
@@ -52,17 +51,17 @@ impl Terminal {
         Self::queue_command(DisableLineWrap)?;
         Ok(())
     }
-    pub fn clear_screen() -> Result<(), Error> {
+    fn clear_screen() -> Result<(), Error> {
         Self::queue_command(Clear(ClearType::All))
     }
-    pub fn clear_line() -> Result<(), Error> {
+    fn clear_line() -> Result<(), Error> {
         Self::queue_command(Clear(ClearType::UntilNewLine))
     }
     fn move_caret_to(position: Position) -> Result<(), Error> {
         #[allow(clippy::as_conversions, clippy::cast_possible_truncation)]
         Self::queue_command(MoveTo(position.col as u16, position.row as u16))
     }
-    pub fn print(string: &str) -> Result<(), Error> {
+    fn print(string: &str) -> Result<(), Error> {
         Self::queue_command(Print(string))
     }
     pub fn print_row(row: usize, line_text: &str) -> Result<(), Error> {
