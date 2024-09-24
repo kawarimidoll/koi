@@ -1,10 +1,11 @@
 use crossterm::cursor::MoveTo;
+use crossterm::style::Print;
 use crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, size, Clear, ClearType, EnterAlternateScreen,
     LeaveAlternateScreen,
 };
 use crossterm::{queue, Command};
-use std::io::{stdout, Error};
+use std::io::{stdout, Error, Write};
 
 pub struct Size {
     pub width: usize,
@@ -44,8 +45,19 @@ impl Terminal {
     pub fn clear_screen() -> Result<(), Error> {
         Self::queue_command(Clear(ClearType::All))
     }
+    pub fn clear_line() -> Result<(), Error> {
+        Self::queue_command(Clear(ClearType::UntilNewLine))
+    }
     pub fn move_caret_to(position: Position) -> Result<(), Error> {
         Self::queue_command(MoveTo(position.col as u16, position.row as u16))
+    }
+    pub fn print(string: &str) -> Result<(), Error> {
+        Self::queue_command(Print(string))
+    }
+    pub fn print_row(row: usize, line_text: &str) -> Result<(), Error> {
+        Self::move_caret_to(Position { col: 0, row })?;
+        Self::clear_line()?;
+        Self::print(line_text)
     }
     pub fn size() -> Result<Size, Error> {
         let (width16, height16) = size()?;

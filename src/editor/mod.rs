@@ -12,26 +12,31 @@ impl Editor {
 
     pub fn run(&self) -> Result<(), std::io::Error> {
         Terminal::initialize()?;
-        println!("Hello, koi!\r");
-        println!("Type something. Press 'q' to quit.\r");
+        Terminal::print_row(0, "Hello, koi!")?;
+        Terminal::print_row(1, "Type something. Press 'q' to quit.")?;
+
+        let height = Terminal::size()?.height;
 
         loop {
+            Terminal::execute()?;
             match read() {
                 Ok(Key(event)) => {
-                    println!("{event:?}\r");
+                    Terminal::print_row(height - 1, &format!("{event:?}"))?;
                     if let Char(c) = event.code {
                         if c == 'q' {
                             break;
                         }
                     }
                 }
-                Err(err) => println!("{err}"),
+                Err(err) => {
+                    Terminal::print_row(height - 1, &format!("{err}"))?;
+                }
                 _ => (),
             }
         }
 
         Terminal::terminate()?;
-        println!("Goodbye, koi!");
+        Terminal::print_row(0, "Goodbye, koi!")?;
         Ok(())
     }
 }
