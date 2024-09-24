@@ -51,13 +51,13 @@ impl Terminal {
         Self::queue_command(DisableLineWrap)?;
         Ok(())
     }
-    fn clear_screen() -> Result<(), Error> {
+    pub fn clear_screen() -> Result<(), Error> {
         Self::queue_command(Clear(ClearType::All))
     }
     fn clear_line() -> Result<(), Error> {
         Self::queue_command(Clear(ClearType::UntilNewLine))
     }
-    fn move_caret_to(position: Position) -> Result<(), Error> {
+    pub fn move_caret_to(position: Position) -> Result<(), Error> {
         #[allow(clippy::as_conversions, clippy::cast_possible_truncation)]
         Self::queue_command(MoveTo(position.col as u16, position.row as u16))
     }
