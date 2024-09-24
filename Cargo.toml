@@ -1,0 +1,10 @@
+[package]
+name = "koi"
+version = "0.1.0"
+authors = ["kawarimidoll <https://github.com/kawarimidoll>"]
+edition = "2021"
+homepage = "https://github.com/kawarimidoll/koi"
+repository = "https://github.com/kawarimidoll/koi"
+readme = "README.md"
+
+[dependencies]
