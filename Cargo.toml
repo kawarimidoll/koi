@@ -8,3 +8,4 @@ repository = "https://github.com/kawarimidoll/koi"
 readme = "README.md"
 
 [dependencies]
+crossterm = "0.28.1"
