@@ -1,42 +1,54 @@
-use crossterm::event::{read, Event::Key, KeyCode::Char};
+use crossterm::event::{
+    read,
+    Event::{self, Key},
+    KeyCode::Char,
+};
+use std::io::Error;
 
 use terminal::Terminal;
 mod terminal;
 
-pub struct Editor {}
+#[derive(Default)]
+pub struct Editor {
+    should_quit: bool,
+}
 
 impl Editor {
-    pub fn default() -> Self {
-        Editor {}
-    }
-
-    pub fn run(&self) -> Result<(), std::io::Error> {
+    pub fn run(&mut self) -> Result<(), Error> {
         Terminal::initialize()?;
         Terminal::print_row(0, "Hello, koi!")?;
         Terminal::print_row(1, "Type something. Press 'q' to quit.")?;
 
-        let height = Terminal::size()?.height;
-
         loop {
             Terminal::execute()?;
             match read() {
-                Ok(Key(event)) => {
-                    Terminal::print_row(height - 1, &format!("{event:?}"))?;
-                    if let Char(c) = event.code {
-                        if c == 'q' {
-                            break;
-                        }
-                    }
+                Ok(event) => {
+                    self.handle_event(event)?;
                 }
                 Err(err) => {
+                    let height = Terminal::size()?.height;
                     Terminal::print_row(height - 1, &format!("{err}"))?;
                 }
-                _ => (),
+            }
+            if self.should_quit {
+                break;
             }
         }
 
         Terminal::terminate()?;
         Terminal::print_row(0, "Goodbye, koi!")?;
+        Ok(())
+    }
+    fn handle_event(&mut self, event: Event) -> Result<(), Error> {
+        let height = Terminal::size()?.height;
+        Terminal::print_row(height - 1, &format!("{event:?}"))?;
+        match event {
+            Key(event) => match event.code {
+                Char('q') => self.should_quit = true,
+                _ => (),
+            },
+            _ => (),
+        }
         Ok(())
     }
 }
