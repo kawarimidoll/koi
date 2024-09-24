@@ -1,8 +1,7 @@
-use crossterm::cursor::MoveTo;
 use crossterm::event::{read, Event::Key, KeyCode::Char};
-use crossterm::queue;
-use crossterm::terminal::{disable_raw_mode, enable_raw_mode, Clear, ClearType};
-use std::io::stdout;
+
+use terminal::Terminal;
+mod terminal;
 
 pub struct Editor {}
 
@@ -12,7 +11,7 @@ impl Editor {
     }
 
     pub fn run(&self) -> Result<(), std::io::Error> {
-        Self::initialize()?;
+        Terminal::initialize()?;
         println!("Hello, koi!\r");
         println!("Type something. Press 'q' to quit.\r");
 
@@ -31,27 +30,8 @@ impl Editor {
             }
         }
 
-        Self::terminate()?;
+        Terminal::terminate()?;
         println!("Goodbye, koi!");
-        Ok(())
-    }
-
-    fn initialize() -> Result<(), std::io::Error> {
-        enable_raw_mode()?;
-        Self::clear_screen()?;
-        Self::move_cursor_to(0, 0)?;
-        Ok(())
-    }
-    fn terminate() -> Result<(), std::io::Error> {
-        disable_raw_mode()?;
-        Ok(())
-    }
-    fn clear_screen() -> Result<(), std::io::Error> {
-        queue!(stdout(), Clear(ClearType::All))?;
-        Ok(())
-    }
-    fn move_cursor_to(x: u16, y: u16) -> Result<(), std::io::Error> {
-        queue!(stdout(), MoveTo(x, y))?;
         Ok(())
     }
 }
