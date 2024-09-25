@@ -147,18 +147,49 @@ impl Editor {
         Terminal::move_caret_to(cursor_position).unwrap();
     }
     fn move_position(&mut self, code: KeyCode) {
-        let Size { width, height } = self.size;
         match code {
-            Left if self.location.x > 0 => self.location.x -= 1,
-            Right if self.location.x < width => self.location.x += 1,
-            Up if self.location.y > 0 => self.location.y -= 1,
-            Down if self.location.y < height => self.location.y += 1,
+            Left => self.move_left(),
+            Right => self.move_right(),
+            Up => self.move_up(),
+            Down => self.move_down(),
             Home => self.location.x = 0,
-            End => self.location.x = width,
+            End => self.location.x = self.get_current_line_len(),
             PageUp => self.location.y = 0,
-            PageDown => self.location.y = height,
+            PageDown => self.location.y = self.size.height,
             _ => (),
         };
+    }
+    fn get_current_line_len(&self) -> usize {
+        self.lines.get(self.location.y).map_or(0, String::len)
+    }
+    #[allow(clippy::arithmetic_side_effects)]
+    // allow this because check boundary condition by myself
+    fn move_left(&mut self) {
+        if self.location.x > 0 {
+            self.location.x -= 1;
+        }
+    }
+    #[allow(clippy::arithmetic_side_effects)]
+    // allow this because check boundary condition by myself
+    fn move_right(&mut self) {
+        if self.location.x < self.get_current_line_len() {
+            self.location.x += 1;
+        }
+    }
+    #[allow(clippy::arithmetic_side_effects)]
+    // allow this because check boundary condition by myself
+    fn move_up(&mut self) {
+        if self.location.y > 0 {
+            self.location.y -= 1;
+        }
+    }
+    #[allow(clippy::arithmetic_side_effects)]
+    // allow this because check boundary condition by myself
+    fn move_down(&mut self) {
+        let line_count = self.lines.len();
+        if self.location.y < line_count {
+            self.location.y += 1;
+        }
     }
 }
 
