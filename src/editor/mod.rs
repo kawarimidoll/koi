@@ -50,13 +50,13 @@ impl Editor {
         Terminal::initialize()?;
         self.handle_args();
         self.needs_redraw = true;
-        self.size = Terminal::size()?;
+        self.size = Terminal::size().unwrap_or_default();
         let bottom_line = self.size.height.saturating_sub(1);
         Terminal::print_row(bottom_line, "Type something. Press 'q' to quit.")?;
         Terminal::move_caret_to(self.cursor_position)?;
 
         loop {
-            self.refresh_screen()?;
+            self.refresh_screen();
             if self.should_quit {
                 break;
             }
@@ -64,7 +64,7 @@ impl Editor {
                 Ok(Key(key_event)) => {
                     // necessary for windows
                     if key_event.kind == crossterm::event::KeyEventKind::Press {
-                        self.handle_key_event(key_event)?;
+                        self.handle_key_event(key_event);
                     }
                 }
                 Ok(Resize(width16, height16)) => {
@@ -83,22 +83,21 @@ impl Editor {
         Terminal::print_row(0, "Goodbye, koi!\r\n")?;
         Ok(())
     }
-    fn handle_key_event(&mut self, event: KeyEvent) -> Result<(), Error> {
-        let height = Terminal::size()?.height;
+    fn handle_key_event(&mut self, event: KeyEvent) {
+        let height = self.size.height;
         let KeyEvent {
             code, modifiers, ..
         } = event;
-        Terminal::print_row(height - 1, &format!("code: {code:?}, mod: {modifiers:?}"))?;
+        let _ = Terminal::print_row(height - 1, &format!("code: {code:?}, mod: {modifiers:?}"));
 
         match code {
             Char('q') if modifiers == KeyModifiers::NONE => self.should_quit = true,
 
             Left | Down | Right | Up | Home | End | PageDown | PageUp => {
-                self.move_position(code)?;
+                self.move_position(code);
             }
             _ => (),
         }
-        Ok(())
     }
     #[allow(clippy::as_conversions)]
     fn handle_resize_event(&mut self, width16: u16, height16: u16) {
@@ -108,18 +107,17 @@ impl Editor {
         self.size = Size { width, height };
         self.needs_redraw = true;
     }
-    fn refresh_screen(&mut self) -> Result<(), Error> {
-        Terminal::hide_caret()?;
+    fn refresh_screen(&mut self) {
+        let _ = Terminal::hide_caret();
         if self.should_quit {
-            Terminal::clear_screen()?;
-            Terminal::move_caret_to(Position::default())?;
+            let _ = Terminal::clear_screen();
+            let _ = Terminal::move_caret_to(Position::default());
         } else {
-            self.render()?;
-            Terminal::move_caret_to(self.cursor_position)?;
+            let _ = self.render();
+            let _ = Terminal::move_caret_to(self.cursor_position);
         }
-        Terminal::show_caret()?;
-        Terminal::execute()?;
-        Ok(())
+        let _ = Terminal::show_caret();
+        let _ = Terminal::execute();
     }
     pub fn render(&mut self) -> Result<(), Error> {
         // render function
@@ -137,14 +135,14 @@ impl Editor {
                 Terminal::print_row(current_row, line.get(left..end).unwrap_or_default())?;
                 continue;
             }
-            Terminal::print_row(current_row, "~\r\n")?;
+            Terminal::print_row(current_row, "~")?;
         }
         // the bottom line is reserved for messages
         self.needs_redraw = false;
         Ok(())
     }
-    fn move_position(&mut self, code: KeyCode) -> Result<(), Error> {
-        let Size { width, height } = Terminal::size()?;
+    fn move_position(&mut self, code: KeyCode) {
+        let Size { width, height } = self.size;
         match code {
             Left if self.cursor_position.col > 0 => self.cursor_position.col -= 1,
             Right if self.cursor_position.col < width => self.cursor_position.col += 1,
@@ -156,7 +154,6 @@ impl Editor {
             PageDown => self.cursor_position.row = height,
             _ => (),
         };
-        Ok(())
     }
 }
 
