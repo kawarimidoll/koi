@@ -101,7 +101,7 @@ impl Editor {
             _ => (),
         }
         let Location { x, y } = self.location;
-        let Position { col, row } = self.text_location_to_position();
+        let Position { col, row } = self.caret_position();
         let Position {
             col: off_c,
             row: off_r,
@@ -149,10 +149,11 @@ impl Editor {
         Ok(())
     }
     fn move_caret(&self) {
-        let cursor_position = self
-            .text_location_to_position()
-            .saturating_sub(&self.scroll_offset);
-        Terminal::move_caret_to(cursor_position).unwrap();
+        Terminal::move_caret_to(self.caret_position()).unwrap();
+    }
+    fn caret_position(&self) -> Position {
+        self.text_location_to_position()
+            .saturating_sub(&self.scroll_offset)
     }
     fn text_location_to_position(&self) -> Position {
         Position {
