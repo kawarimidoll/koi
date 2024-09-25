@@ -169,8 +169,21 @@ impl Editor {
             Down => self.move_down(1),
             Home => self.location.x = 0,
             End => self.location.x = usize::MAX,
-            PageUp => self.move_up(self.size.height),
-            PageDown => self.move_down(self.size.height),
+            PageUp => {
+                let off_r = self.scroll_offset.row;
+                self.move_up(self.size.height);
+                self.scroll_offset.row = off_r.saturating_sub(self.size.height);
+                self.needs_redraw = true;
+            }
+            PageDown => {
+                let off_r = self.scroll_offset.row;
+                self.move_down(self.size.height);
+                self.scroll_offset.row = min(
+                    off_r.saturating_add(self.size.height),
+                    self.get_lines_count().saturating_sub(self.size.height),
+                );
+                self.needs_redraw = true;
+            }
             _ => (),
         };
         self.scroll_into_view();
