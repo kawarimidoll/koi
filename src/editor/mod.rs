@@ -56,7 +56,7 @@ impl Editor {
                 Ok(Key(key_event)) => {
                     // necessary for windows
                     if key_event.kind == crossterm::event::KeyEventKind::Press {
-                        self.handle_key_event(&key_event)?;
+                        self.handle_key_event(key_event)?;
                     }
                 }
                 Ok(Resize(width16, height16)) => {
@@ -75,7 +75,7 @@ impl Editor {
         Terminal::print_row(0, "Goodbye, koi!\r\n")?;
         Ok(())
     }
-    fn handle_key_event(&mut self, event: &KeyEvent) -> Result<(), Error> {
+    fn handle_key_event(&mut self, event: KeyEvent) -> Result<(), Error> {
         let height = Terminal::size()?.height;
         let KeyEvent {
             code, modifiers, ..
@@ -83,10 +83,10 @@ impl Editor {
         Terminal::print_row(height - 1, &format!("code: {code:?}, mod: {modifiers:?}"))?;
 
         match code {
-            Char('q') if *modifiers == KeyModifiers::NONE => self.should_quit = true,
+            Char('q') if modifiers == KeyModifiers::NONE => self.should_quit = true,
 
             Left | Down | Right | Up | Home | End | PageDown | PageUp => {
-                self.move_position(*code)?;
+                self.move_position(code)?;
             }
             _ => (),
         }
