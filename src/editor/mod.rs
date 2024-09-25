@@ -124,3 +124,19 @@ impl Editor {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_load() {
+        let result = Editor::load("tests/fixtures/load.md");
+        assert!(result.is_ok());
+        let lines = result.unwrap();
+        assert_eq!(lines.len(), 3);
+        assert_eq!(lines[0], "# this is test file for load");
+        assert_eq!(lines[1], "");
+        assert_eq!(lines[2], "this is sample text");
+    }
+}
