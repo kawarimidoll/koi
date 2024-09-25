@@ -4,16 +4,24 @@ use crossterm::event::{
     KeyCode::{self, Char, Down, End, Home, Left, PageDown, PageUp, Right, Up},
     KeyEvent, KeyModifiers,
 };
-use std::{fs::read_to_string, io::Error};
+use std::{cmp, fs::read_to_string, io::Error};
 use terminal::{Position, Size};
 
 use terminal::Terminal;
 mod terminal;
 
+#[derive(Copy, Clone, Default)]
+pub struct Location {
+    // the position of the document
+    pub x: usize,
+    pub y: usize,
+}
+
 #[derive(Default)]
 pub struct Editor {
     should_quit: bool,
     cursor_position: Position,
+    scroll_offset: Location,
     lines: Vec<String>,
     needs_redraw: bool,
     size: Size,
@@ -43,7 +51,7 @@ impl Editor {
         self.handle_args();
         self.needs_redraw = true;
         self.size = Terminal::size()?;
-        let bottom_line = Terminal::size()?.height.saturating_sub(1);
+        let bottom_line = self.size.height.saturating_sub(1);
         Terminal::print_row(bottom_line, "Type something. Press 'q' to quit.")?;
         Terminal::move_caret_to(self.cursor_position)?;
 
@@ -118,12 +126,15 @@ impl Editor {
         if !self.needs_redraw {
             return Ok(());
         }
-        let Size { width, height } = Terminal::size()?;
+        let Size { width, height } = self.size;
+        let top = self.scroll_offset.y;
+        let left = self.scroll_offset.x;
+        let right = left.saturating_add(width);
         for current_row in 0..height.saturating_sub(1) {
-            if let Some(line) = self.lines.get(current_row) {
-                let mut l = String::from(line);
-                l.truncate(width);
-                Terminal::print_row(current_row, &l)?;
+            let current_line = top.saturating_add(current_row);
+            if let Some(line) = self.lines.get(current_line) {
+                let end = cmp::min(right, line.len());
+                Terminal::print_row(current_row, line.get(left..end).unwrap_or_default())?;
                 continue;
             }
             Terminal::print_row(current_row, "~\r\n")?;
