@@ -10,7 +10,7 @@ use terminal::{Position, Size};
 use terminal::Terminal;
 mod terminal;
 
-#[derive(Copy, Clone, Default)]
+#[derive(Copy, Clone, Eq, PartialEq, Debug, Default)]
 pub struct Location {
     // the position of the document
     pub x: usize,
@@ -120,7 +120,7 @@ impl Editor {
     fn handle_resize_event(&mut self, width16: u16, height16: u16) {
         let width = width16 as usize;
         let height = height16 as usize;
-        let _ = Terminal::print_row(height - 1, &format!("Resize to: {width:?}, {height:?}"));
+        // let _ = Terminal::print_row(height - 1, &format!("Resize to: {width:?}, {height:?}"));
         self.size = Size { width, height };
         self.needs_redraw = true;
     }
@@ -273,5 +273,37 @@ mod tests {
         assert_eq!(lines[0], "# this is test file for load");
         assert_eq!(lines[1], "");
         assert_eq!(lines[2], "this is sample text");
+    }
+
+    #[test]
+    fn test_resize() {
+        let mut editor = Editor::default();
+        assert_eq!(editor.size, Size::default());
+        editor.handle_resize_event(10, 10);
+        assert_eq!(editor.size, Size::new(10, 10));
+    }
+
+    #[test]
+    fn test_move() {
+        let mut editor = Editor::default();
+        editor.size = Size::new(10, 10);
+        editor.lines = vec!["this".to_string(), "is".to_string(), "test.".to_string()];
+        assert_eq!(editor.location, Location::default());
+        // normal move
+        editor.move_position(Down);
+        assert_eq!(editor.location, Location::new(0, 1));
+        editor.move_position(Right);
+        assert_eq!(editor.location, Location::new(1, 1));
+        editor.move_position(Up);
+        assert_eq!(editor.location, Location::new(1, 0));
+        editor.move_position(Left);
+        assert_eq!(editor.location, Location::new(0, 0));
+
+        // nop
+        editor.move_position(Left);
+        assert_eq!(editor.location, Location::new(0, 0));
+        editor.move_position(Up);
+        assert_eq!(editor.location, Location::new(0, 0));
+        // todo add test for wrap move
     }
 }
