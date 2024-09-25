@@ -21,7 +21,7 @@ pub struct Location {
 pub struct Editor {
     should_quit: bool,
     location: Location,
-    scroll_offset: Location,
+    scroll_offset: Position,
     lines: Vec<String>,
     needs_redraw: bool,
     size: Size,
@@ -123,8 +123,8 @@ impl Editor {
             return Ok(());
         }
         let Size { width, height } = size;
-        let top = self.scroll_offset.y;
-        let left = self.scroll_offset.x;
+        let top = self.scroll_offset.row;
+        let left = self.scroll_offset.col;
         let right = left.saturating_add(width);
         for current_row in 0..height.saturating_sub(1) {
             let current_line = top.saturating_add(current_row);
