@@ -19,8 +19,8 @@ pub struct Editor {
 impl Editor {
     pub fn run(&mut self) -> Result<(), Error> {
         Terminal::initialize()?;
-        Terminal::print_row(0, "Hello, koi!")?;
-        Terminal::print_row(1, "Type something. Press 'q' to quit.")?;
+        let bottom_line = Terminal::size()?.height.saturating_sub(1);
+        Terminal::print_row(bottom_line, "Type something. Press 'q' to quit.")?;
         Terminal::move_caret_to(self.cursor_position)?;
 
         loop {
@@ -33,8 +33,7 @@ impl Editor {
                     self.handle_event(&event)?;
                 }
                 Err(err) => {
-                    let height = Terminal::size()?.height;
-                    Terminal::print_row(height - 1, &format!("{err}"))?;
+                    Terminal::print_row(bottom_line, &format!("{err}"))?;
                 }
             }
         }
@@ -68,9 +67,19 @@ impl Editor {
             Terminal::clear_screen()?;
             Terminal::move_caret_to(Position::default())?;
         } else {
+            Self::render()?;
             Terminal::move_caret_to(self.cursor_position)?;
         }
         Terminal::execute()?;
+        Ok(())
+    }
+    pub fn render() -> Result<(), Error> {
+        // render function
+        let height = Terminal::size()?.height;
+        for current_row in 0..height.saturating_sub(1) {
+            Terminal::print_row(current_row, "~\r\n")?;
+        }
+        // the bottom line is reserved for messages
         Ok(())
     }
     fn move_position(&mut self, code: KeyCode) -> Result<(), Error> {
