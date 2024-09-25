@@ -140,10 +140,10 @@ impl Editor {
         Ok(())
     }
     fn move_caret(&self) {
-        let cursor_position = self.snap_location_to_valid_position();
+        let cursor_position = self.text_location_to_position();
         Terminal::move_caret_to(cursor_position).unwrap();
     }
-    fn snap_location_to_valid_position(&self) -> Position {
+    fn text_location_to_position(&self) -> Position {
         Position {
             col: min(self.location.x, self.get_current_line_len()),
             row: min(self.location.y, self.get_lines_count()),
@@ -171,7 +171,7 @@ impl Editor {
     #[allow(clippy::arithmetic_side_effects)]
     // allow this because check boundary condition by myself
     fn move_left(&mut self) {
-        self.location.x = self.snap_location_to_valid_position().col;
+        self.location.x = self.text_location_to_position().col;
         if self.location.x > 0 {
             self.location.x -= 1;
         } else if self.location.y > 0 {
@@ -180,7 +180,7 @@ impl Editor {
         }
     }
     fn move_right(&mut self) {
-        self.location.x = self.snap_location_to_valid_position().col;
+        self.location.x = self.text_location_to_position().col;
         if self.location.x < self.get_current_line_len() {
             self.location.x = self.location.x.saturating_add(1);
         } else if self.location.y < self.get_lines_count() {
