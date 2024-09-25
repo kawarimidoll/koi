@@ -4,7 +4,7 @@ use crossterm::event::{
     KeyCode::{self, Char, Down, End, Home, Left, PageDown, PageUp, Right, Up},
     KeyEvent,
 };
-use std::io::Error;
+use std::{fs::read_to_string, io::Error};
 use terminal::{Position, Size};
 
 use terminal::Terminal;
@@ -14,11 +14,31 @@ mod terminal;
 pub struct Editor {
     should_quit: bool,
     cursor_position: Position,
+    lines: Vec<String>,
 }
 
 impl Editor {
+    fn handle_args(&mut self) {
+        let args: Vec<String> = std::env::args().collect();
+        // only load the first file for now
+        if let Some(first) = args.get(1) {
+            if let Ok(lines) = Self::load(first) {
+                self.lines = lines;
+            }
+        }
+    }
+    pub fn load(filename: &str) -> Result<Vec<String>, Error> {
+        let contents = read_to_string(filename)?;
+        let mut lines = Vec::new();
+        for line in contents.lines() {
+            lines.push(String::from(line));
+        }
+        Ok(lines)
+    }
+
     pub fn run(&mut self) -> Result<(), Error> {
         Terminal::initialize()?;
+        self.handle_args();
         let bottom_line = Terminal::size()?.height.saturating_sub(1);
         Terminal::print_row(bottom_line, "Type something. Press 'q' to quit.")?;
         Terminal::move_caret_to(self.cursor_position)?;
@@ -67,16 +87,20 @@ impl Editor {
             Terminal::clear_screen()?;
             Terminal::move_caret_to(Position::default())?;
         } else {
-            Self::render()?;
+            self.render()?;
             Terminal::move_caret_to(self.cursor_position)?;
         }
         Terminal::execute()?;
         Ok(())
     }
-    pub fn render() -> Result<(), Error> {
+    pub fn render(&self) -> Result<(), Error> {
         // render function
         let height = Terminal::size()?.height;
         for current_row in 0..height.saturating_sub(1) {
+            if let Some(line) = self.lines.get(current_row) {
+                Terminal::print_row(current_row, line)?;
+                continue;
+            }
             Terminal::print_row(current_row, "~\r\n")?;
         }
         // the bottom line is reserved for messages
