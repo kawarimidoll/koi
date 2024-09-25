@@ -174,14 +174,18 @@ impl Editor {
         self.location.x = self.snap_location_to_valid_position().col;
         if self.location.x > 0 {
             self.location.x -= 1;
+        } else if self.location.y > 0 {
+            self.move_up();
+            self.location.x = self.get_current_line_len();
         }
     }
-    #[allow(clippy::arithmetic_side_effects)]
-    // allow this because check boundary condition by myself
     fn move_right(&mut self) {
         self.location.x = self.snap_location_to_valid_position().col;
         if self.location.x < self.get_current_line_len() {
-            self.location.x += 1;
+            self.location.x = self.location.x.saturating_add(1);
+        } else if self.location.y < self.get_lines_count() {
+            self.move_down();
+            self.location.x = 0;
         }
     }
     #[allow(clippy::arithmetic_side_effects)]
