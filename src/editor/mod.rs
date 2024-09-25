@@ -20,7 +20,7 @@ pub struct Location {
 #[derive(Default)]
 pub struct Editor {
     should_quit: bool,
-    cursor_position: Position,
+    location: Location,
     scroll_offset: Location,
     lines: Vec<String>,
     needs_redraw: bool,
@@ -59,7 +59,7 @@ impl Editor {
     pub fn repl(&mut self) -> Result<(), Error> {
         let bottom_line = self.size.height.saturating_sub(1);
         Terminal::print_row(bottom_line, "Type something. Press 'q' to quit.")?;
-        Terminal::move_caret_to(self.cursor_position)?;
+        self.move_caret();
 
         loop {
             self.refresh_screen();
@@ -113,7 +113,7 @@ impl Editor {
     fn refresh_screen(&mut self) {
         let _ = Terminal::hide_caret();
         let _ = self.render(self.size);
-        let _ = Terminal::move_caret_to(self.cursor_position);
+        self.move_caret();
         let _ = Terminal::show_caret();
         let _ = Terminal::execute();
     }
@@ -139,17 +139,24 @@ impl Editor {
         self.needs_redraw = false;
         Ok(())
     }
+    fn move_caret(&self) {
+        let cursor_position = Position {
+            col: self.location.x,
+            row: self.location.y,
+        };
+        Terminal::move_caret_to(cursor_position).unwrap();
+    }
     fn move_position(&mut self, code: KeyCode) {
         let Size { width, height } = self.size;
         match code {
-            Left if self.cursor_position.col > 0 => self.cursor_position.col -= 1,
-            Right if self.cursor_position.col < width => self.cursor_position.col += 1,
-            Up if self.cursor_position.row > 0 => self.cursor_position.row -= 1,
-            Down if self.cursor_position.row < height => self.cursor_position.row += 1,
-            Home => self.cursor_position.col = 0,
-            End => self.cursor_position.col = width,
-            PageUp => self.cursor_position.row = 0,
-            PageDown => self.cursor_position.row = height,
+            Left if self.location.x > 0 => self.location.x -= 1,
+            Right if self.location.x < width => self.location.x += 1,
+            Up if self.location.y > 0 => self.location.y -= 1,
+            Down if self.location.y < height => self.location.y += 1,
+            Home => self.location.x = 0,
+            End => self.location.x = width,
+            PageUp => self.location.y = 0,
+            PageDown => self.location.y = height,
             _ => (),
         };
     }
