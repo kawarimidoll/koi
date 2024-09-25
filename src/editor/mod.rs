@@ -1,8 +1,8 @@
 use crossterm::event::{
     read,
-    Event::{self, Key},
+    Event::Key,
     KeyCode::{self, Char, Down, End, Home, Left, PageDown, PageUp, Right, Up},
-    KeyEvent,
+    KeyEvent, KeyModifiers,
 };
 use std::{fs::read_to_string, io::Error};
 use terminal::{Position, Size};
@@ -51,11 +51,17 @@ impl Editor {
                 break;
             }
             match read() {
-                Ok(event) => {
-                    self.handle_event(&event)?;
+                Ok(Key(key_event)) => {
+                    // necessary for windows
+                    if key_event.kind == crossterm::event::KeyEventKind::Press {
+                        self.handle_key_event(&key_event)?;
+                    }
                 }
                 Err(err) => {
                     Terminal::print_row(bottom_line, &format!("{err}"))?;
+                }
+                _ => {
+                    Terminal::print_row(bottom_line, "Unsupported event!")?;
                 }
             }
         }
@@ -64,23 +70,20 @@ impl Editor {
         Terminal::print_row(0, "Goodbye, koi!\r\n")?;
         Ok(())
     }
-    fn handle_event(&mut self, event: &Event) -> Result<(), Error> {
+    fn handle_key_event(&mut self, event: &KeyEvent) -> Result<(), Error> {
         let height = Terminal::size()?.height;
-        Terminal::print_row(height - 1, &format!("{event:?}"))?;
-        if let Key(KeyEvent {
+        let KeyEvent {
             code, modifiers, ..
-        }) = event
-        {
-            match code {
-                Char('q') if *modifiers == crossterm::event::KeyModifiers::NONE => {
-                    self.should_quit = true
-                }
+        } = event;
+        Terminal::print_row(height - 1, &format!("code: {code:?}, mod: {modifiers:?}"))?;
 
-                Left | Down | Right | Up | Home | End | PageDown | PageUp => {
-                    self.move_position(*code)?;
-                }
-                _ => (),
+        match code {
+            Char('q') if *modifiers == KeyModifiers::NONE => self.should_quit = true,
+
+            Left | Down | Right | Up | Home | End | PageDown | PageUp => {
+                self.move_position(*code)?;
             }
+            _ => (),
         }
         Ok(())
     }
