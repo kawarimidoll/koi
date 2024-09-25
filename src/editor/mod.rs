@@ -164,12 +164,12 @@ impl Editor {
         match code {
             Left => self.move_left(),
             Right => self.move_right(),
-            Up => self.move_up(),
-            Down => self.move_down(),
+            Up => self.move_up(1),
+            Down => self.move_down(1),
             Home => self.location.x = 0,
             End => self.location.x = usize::MAX,
-            PageUp => self.location.y = 0,
-            PageDown => self.location.y = self.size.height,
+            PageUp => self.move_up(self.size.height),
+            PageDown => self.move_down(self.size.height),
             _ => (),
         };
         self.scroll_into_view();
@@ -187,7 +187,7 @@ impl Editor {
         if self.location.x > 0 {
             self.location.x -= 1;
         } else if self.location.y > 0 {
-            self.move_up();
+            self.move_up(1);
             self.location.x = self.get_current_line_len();
         }
     }
@@ -196,20 +196,18 @@ impl Editor {
         if self.location.x < self.get_current_line_len() {
             self.location.x = self.location.x.saturating_add(1);
         } else if self.location.y < self.get_lines_count() {
-            self.move_down();
+            self.move_down(1);
             self.location.x = 0;
         }
     }
-    #[allow(clippy::arithmetic_side_effects)]
-    // allow this because check boundary condition by myself
-    fn move_up(&mut self) {
+    fn move_up(&mut self, step: usize) {
         if self.location.y > 0 {
-            self.location.y -= 1;
+            self.location.y = self.location.y.saturating_sub(step);
         }
     }
-    fn move_down(&mut self) {
+    fn move_down(&mut self, step: usize) {
         if self.location.y < self.get_lines_count() {
-            self.location.y = self.location.y.saturating_add(1);
+            self.location.y = min(self.location.y.saturating_add(step), self.get_lines_count());
         }
     }
     fn scroll_into_view(&mut self) {
