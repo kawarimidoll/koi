@@ -112,17 +112,17 @@ impl Editor {
     }
     fn refresh_screen(&mut self) {
         let _ = Terminal::hide_caret();
-        let _ = self.render();
+        let _ = self.render(self.size);
         let _ = Terminal::move_caret_to(self.cursor_position);
         let _ = Terminal::show_caret();
         let _ = Terminal::execute();
     }
-    pub fn render(&mut self) -> Result<(), Error> {
+    pub fn render(&mut self, size: Size) -> Result<(), Error> {
         // render function
         if !self.needs_redraw {
             return Ok(());
         }
-        let Size { width, height } = self.size;
+        let Size { width, height } = size;
         let top = self.scroll_offset.y;
         let left = self.scroll_offset.x;
         let right = left.saturating_add(width);
