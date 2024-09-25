@@ -17,6 +17,7 @@ pub struct Location {
     pub y: usize,
 }
 impl Location {
+    #[allow(dead_code)]
     pub fn new(x: usize, y: usize) -> Self {
         Self { x, y }
     }
@@ -284,26 +285,78 @@ mod tests {
     }
 
     #[test]
-    fn test_move() {
+    fn test_move_left() {
         let mut editor = Editor::default();
         editor.size = Size::new(10, 10);
         editor.lines = vec!["this".to_string(), "is".to_string(), "test.".to_string()];
-        assert_eq!(editor.location, Location::default());
-        // normal move
-        editor.move_position(Down);
-        assert_eq!(editor.location, Location::new(0, 1));
-        editor.move_position(Right);
-        assert_eq!(editor.location, Location::new(1, 1));
-        editor.move_position(Up);
-        assert_eq!(editor.location, Location::new(1, 0));
+        // Left on (0, 0) -> (0, 0)
         editor.move_position(Left);
-        assert_eq!(editor.location, Location::new(0, 0));
+        assert_eq!(editor.caret_position(), Position::new(0, 0));
+        // Left on (1, 0) -> (0, 0)
+        editor.location = Location::new(1, 0);
+        editor.move_position(Left);
+        assert_eq!(editor.caret_position(), Position::new(0, 0));
+        // Left on (0, 1) -> (4, 0) (wrap)
+        editor.location = Location::new(0, 1);
+        editor.move_position(Left);
+        assert_eq!(editor.caret_position(), Position::new(4, 0));
+    }
 
-        // nop
-        editor.move_position(Left);
-        assert_eq!(editor.location, Location::new(0, 0));
+    #[test]
+    fn test_move_right() {
+        let mut editor = Editor::default();
+        editor.size = Size::new(10, 10);
+        editor.lines = vec!["this".to_string(), "is".to_string(), "test.".to_string()];
+        // Right on (0, 0) -> (1, 0)
+        editor.move_position(Right);
+        assert_eq!(editor.caret_position(), Position::new(1, 0));
+        // Right on (3, 0) -> (3, 0)
+        editor.location = Location::new(0, 3);
+        editor.move_position(Right);
+        assert_eq!(editor.caret_position(), Position::new(0, 3));
+        // Right on (4, 0) -> (0, 1) (wrap)
+        editor.location = Location::new(4, 0);
+        editor.move_position(Right);
+        assert_eq!(editor.caret_position(), Position::new(0, 1));
+    }
+
+    #[test]
+    fn test_move_up() {
+        let mut editor = Editor::default();
+        editor.size = Size::new(10, 10);
+        editor.lines = vec!["this".to_string(), "is".to_string(), "test.".to_string()];
+        // Up on (0, 0) -> (0, 0)
         editor.move_position(Up);
-        assert_eq!(editor.location, Location::new(0, 0));
-        // todo add test for wrap move
+        assert_eq!(editor.caret_position(), Position::new(0, 0));
+        // Up on (0, 1) -> (0, 0)
+        editor.location = Location::new(0, 1);
+        editor.move_position(Up);
+        assert_eq!(editor.caret_position(), Position::new(0, 0));
+        // Up on (3, 2) -> (2, 1) -> (3, 0) (snap)
+        editor.location = Location::new(3, 2);
+        editor.move_position(Up);
+        assert_eq!(editor.caret_position(), Position::new(2, 1));
+        editor.move_position(Up);
+        assert_eq!(editor.caret_position(), Position::new(3, 0));
+    }
+
+    #[test]
+    fn test_move_down() {
+        let mut editor = Editor::default();
+        editor.size = Size::new(10, 10);
+        editor.lines = vec!["this".to_string(), "is".to_string(), "test.".to_string()];
+        // Down on (0, 0) -> (0, 1)
+        editor.move_position(Down);
+        assert_eq!(editor.caret_position(), Position::new(0, 1));
+        // Down on (0, 3) -> (0, 3)
+        editor.location = Location::new(0, 3);
+        editor.move_position(Down);
+        assert_eq!(editor.caret_position(), Position::new(0, 3));
+        // Down on (3, 0) -> (2, 1) -> (3, 2) (snap)
+        editor.location = Location::new(3, 0);
+        editor.move_position(Down);
+        assert_eq!(editor.caret_position(), Position::new(2, 1));
+        editor.move_position(Down);
+        assert_eq!(editor.caret_position(), Position::new(3, 2));
     }
 }

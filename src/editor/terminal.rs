@@ -13,16 +13,21 @@ pub struct Size {
     pub height: usize,
 }
 impl Size {
+    #[allow(dead_code)]
     pub fn new(width: usize, height: usize) -> Self {
         Self { width, height }
     }
 }
-#[derive(Clone, Copy, Default)]
+#[derive(Copy, Clone, Eq, PartialEq, Debug, Default)]
 pub struct Position {
-    pub row: usize,
     pub col: usize,
+    pub row: usize,
 }
 impl Position {
+    #[allow(dead_code)]
+    pub fn new(col: usize, row: usize) -> Self {
+        Self { col, row }
+    }
     pub const fn saturating_sub(&self, other: &Self) -> Self {
         Self {
             col: self.col.saturating_sub(other.col),
