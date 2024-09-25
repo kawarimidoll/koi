@@ -15,6 +15,7 @@ pub struct Editor {
     should_quit: bool,
     cursor_position: Position,
     lines: Vec<String>,
+    needs_redraw: bool,
 }
 
 impl Editor {
@@ -39,6 +40,7 @@ impl Editor {
     pub fn run(&mut self) -> Result<(), Error> {
         Terminal::initialize()?;
         self.handle_args();
+        self.needs_redraw = true;
         let bottom_line = Terminal::size()?.height.saturating_sub(1);
         Terminal::print_row(bottom_line, "Type something. Press 'q' to quit.")?;
         Terminal::move_caret_to(self.cursor_position)?;
@@ -95,8 +97,11 @@ impl Editor {
         Terminal::execute()?;
         Ok(())
     }
-    pub fn render(&self) -> Result<(), Error> {
+    pub fn render(&mut self) -> Result<(), Error> {
         // render function
+        if !self.needs_redraw {
+            return Ok(());
+        }
         let Size { width, height } = Terminal::size()?;
         for current_row in 0..height.saturating_sub(1) {
             if let Some(line) = self.lines.get(current_row) {
@@ -108,6 +113,7 @@ impl Editor {
             Terminal::print_row(current_row, "~\r\n")?;
         }
         // the bottom line is reserved for messages
+        self.needs_redraw = false;
         Ok(())
     }
     fn move_position(&mut self, code: KeyCode) -> Result<(), Error> {
