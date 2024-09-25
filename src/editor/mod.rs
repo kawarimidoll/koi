@@ -4,7 +4,7 @@ use crossterm::event::{
     KeyCode::{self, Char, Down, End, Home, Left, PageDown, PageUp, Right, Up},
     KeyEvent, KeyModifiers,
 };
-use std::{cmp, fs::read_to_string, io::Error};
+use std::{cmp::min, fs::read_to_string, io::Error};
 use terminal::{Position, Size};
 
 use terminal::Terminal;
@@ -129,7 +129,7 @@ impl Editor {
         for current_row in 0..height.saturating_sub(1) {
             let current_line = top.saturating_add(current_row);
             if let Some(line) = self.lines.get(current_line) {
-                let end = cmp::min(right, line.len());
+                let end = min(right, line.len());
                 Terminal::print_row(current_row, line.get(left..end).unwrap_or_default())?;
                 continue;
             }
@@ -140,11 +140,14 @@ impl Editor {
         Ok(())
     }
     fn move_caret(&self) {
-        let cursor_position = Position {
-            col: self.location.x,
-            row: self.location.y,
-        };
+        let cursor_position = self.snap_location_to_valid_position();
         Terminal::move_caret_to(cursor_position).unwrap();
+    }
+    fn snap_location_to_valid_position(&self) -> Position {
+        Position {
+            col: min(self.location.x, self.get_current_line_len()),
+            row: min(self.location.y, self.get_lines_count()),
+        }
     }
     fn move_position(&mut self, code: KeyCode) {
         match code {
@@ -153,7 +156,7 @@ impl Editor {
             Up => self.move_up(),
             Down => self.move_down(),
             Home => self.location.x = 0,
-            End => self.location.x = self.get_current_line_len(),
+            End => self.location.x = usize::MAX,
             PageUp => self.location.y = 0,
             PageDown => self.location.y = self.size.height,
             _ => (),
@@ -162,9 +165,13 @@ impl Editor {
     fn get_current_line_len(&self) -> usize {
         self.lines.get(self.location.y).map_or(0, String::len)
     }
+    fn get_lines_count(&self) -> usize {
+        self.lines.len()
+    }
     #[allow(clippy::arithmetic_side_effects)]
     // allow this because check boundary condition by myself
     fn move_left(&mut self) {
+        self.location.x = self.snap_location_to_valid_position().col;
         if self.location.x > 0 {
             self.location.x -= 1;
         }
@@ -172,6 +179,7 @@ impl Editor {
     #[allow(clippy::arithmetic_side_effects)]
     // allow this because check boundary condition by myself
     fn move_right(&mut self) {
+        self.location.x = self.snap_location_to_valid_position().col;
         if self.location.x < self.get_current_line_len() {
             self.location.x += 1;
         }
@@ -183,12 +191,9 @@ impl Editor {
             self.location.y -= 1;
         }
     }
-    #[allow(clippy::arithmetic_side_effects)]
-    // allow this because check boundary condition by myself
     fn move_down(&mut self) {
-        let line_count = self.lines.len();
-        if self.location.y < line_count {
-            self.location.y += 1;
+        if self.location.y < self.get_lines_count() {
+            self.location.y = self.location.y.saturating_add(1);
         }
     }
 }
