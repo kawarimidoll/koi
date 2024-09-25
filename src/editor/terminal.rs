@@ -37,20 +37,16 @@ impl Terminal {
         Ok(())
     }
     fn enter_alternate_screen() -> Result<(), Error> {
-        Self::queue_command(EnterAlternateScreen)?;
-        Ok(())
+        Self::queue_command(EnterAlternateScreen)
     }
     fn leave_alternate_screen() -> Result<(), Error> {
-        Self::queue_command(LeaveAlternateScreen)?;
-        Ok(())
+        Self::queue_command(LeaveAlternateScreen)
     }
     fn enable_line_wrap() -> Result<(), Error> {
-        Self::queue_command(EnableLineWrap)?;
-        Ok(())
+        Self::queue_command(EnableLineWrap)
     }
     fn disable_line_wrap() -> Result<(), Error> {
-        Self::queue_command(DisableLineWrap)?;
-        Ok(())
+        Self::queue_command(DisableLineWrap)
     }
     pub fn clear_screen() -> Result<(), Error> {
         Self::queue_command(Clear(ClearType::All))
