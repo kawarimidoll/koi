@@ -91,7 +91,6 @@ impl Editor {
         let KeyEvent {
             code, modifiers, ..
         } = event;
-        let _ = Terminal::print_row(height - 1, &format!("code: {code:?}, mod: {modifiers:?}"));
 
         match code {
             Char('q') if modifiers == KeyModifiers::NONE => self.should_quit = true,
@@ -101,6 +100,16 @@ impl Editor {
             }
             _ => (),
         }
+        let Location { x, y } = self.location;
+        let Position { col, row } = self.text_location_to_position();
+        let Position {
+            col: off_c,
+            row: off_r,
+        } = self.scroll_offset;
+        let _ = Terminal::print_row(
+            height - 1,
+            &format!("loc: {x},{y}, pos: {col},{row}, off: {off_c},{off_r}"),
+        );
     }
     #[allow(clippy::as_conversions)]
     fn handle_resize_event(&mut self, width16: u16, height16: u16) {
@@ -140,7 +149,9 @@ impl Editor {
         Ok(())
     }
     fn move_caret(&self) {
-        let cursor_position = self.text_location_to_position();
+        let cursor_position = self
+            .text_location_to_position()
+            .saturating_sub(&self.scroll_offset);
         Terminal::move_caret_to(cursor_position).unwrap();
     }
     fn text_location_to_position(&self) -> Position {
@@ -161,6 +172,7 @@ impl Editor {
             PageDown => self.location.y = self.size.height,
             _ => (),
         };
+        self.scroll_into_view();
     }
     fn get_current_line_len(&self) -> usize {
         self.lines.get(self.location.y).map_or(0, String::len)
@@ -198,6 +210,26 @@ impl Editor {
     fn move_down(&mut self) {
         if self.location.y < self.get_lines_count() {
             self.location.y = self.location.y.saturating_add(1);
+        }
+    }
+    fn scroll_into_view(&mut self) {
+        let Position { col, row } = self.text_location_to_position();
+        let Size { width, height } = self.size;
+        // horizontal
+        if col < self.scroll_offset.col {
+            self.scroll_offset.col = col;
+            self.needs_redraw = true;
+        } else if col >= self.scroll_offset.col.saturating_add(width) {
+            self.scroll_offset.col = col.saturating_add(1).saturating_sub(width);
+            self.needs_redraw = true;
+        }
+        // vertical
+        if row < self.scroll_offset.row {
+            self.scroll_offset.row = row;
+            self.needs_redraw = true;
+        } else if row >= self.scroll_offset.row.saturating_add(height) {
+            self.scroll_offset.row = row.saturating_add(1).saturating_sub(height);
+            self.needs_redraw = true;
         }
     }
 }
