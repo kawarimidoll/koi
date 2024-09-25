@@ -46,11 +46,17 @@ impl Editor {
         Ok(lines)
     }
 
-    pub fn run(&mut self) -> Result<(), Error> {
-        Terminal::initialize()?;
+    pub fn run(&mut self) {
+        Terminal::initialize().unwrap();
         self.handle_args();
         self.needs_redraw = true;
         self.size = Terminal::size().unwrap_or_default();
+        let result = self.repl();
+        Terminal::terminate().unwrap();
+        result.unwrap();
+    }
+
+    pub fn repl(&mut self) -> Result<(), Error> {
         let bottom_line = self.size.height.saturating_sub(1);
         Terminal::print_row(bottom_line, "Type something. Press 'q' to quit.")?;
         Terminal::move_caret_to(self.cursor_position)?;
@@ -78,9 +84,6 @@ impl Editor {
                 }
             }
         }
-
-        Terminal::terminate()?;
-        Terminal::print_row(0, "Goodbye, koi!\r\n")?;
         Ok(())
     }
     fn handle_key_event(&mut self, event: KeyEvent) {
@@ -109,13 +112,8 @@ impl Editor {
     }
     fn refresh_screen(&mut self) {
         let _ = Terminal::hide_caret();
-        if self.should_quit {
-            let _ = Terminal::clear_screen();
-            let _ = Terminal::move_caret_to(Position::default());
-        } else {
-            let _ = self.render();
-            let _ = Terminal::move_caret_to(self.cursor_position);
-        }
+        let _ = self.render();
+        let _ = Terminal::move_caret_to(self.cursor_position);
         let _ = Terminal::show_caret();
         let _ = Terminal::execute();
     }
@@ -154,6 +152,15 @@ impl Editor {
             PageDown => self.cursor_position.row = height,
             _ => (),
         };
+    }
+}
+
+impl Drop for Editor {
+    fn drop(&mut self) {
+        let _ = Terminal::terminate();
+        if self.should_quit {
+            let _ = Terminal::print_row(0, "Goodbye, koi!\r\n");
+        }
     }
 }
 
