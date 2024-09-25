@@ -1,4 +1,4 @@
-use crossterm::cursor::MoveTo;
+use crossterm::cursor::{Hide, MoveTo, Show};
 use crossterm::style::Print;
 use crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, size, Clear, ClearType, DisableLineWrap, EnableLineWrap,
@@ -31,6 +31,7 @@ impl Terminal {
     pub fn terminate() -> Result<(), Error> {
         Self::leave_alternate_screen()?;
         Self::enable_line_wrap()?;
+        Self::show_caret()?;
         Self::execute()?;
         disable_raw_mode()?;
         Ok(())
@@ -60,6 +61,12 @@ impl Terminal {
     pub fn move_caret_to(position: Position) -> Result<(), Error> {
         #[allow(clippy::as_conversions, clippy::cast_possible_truncation)]
         Self::queue_command(MoveTo(position.col as u16, position.row as u16))
+    }
+    pub fn hide_caret() -> Result<(), Error> {
+        Self::queue_command(Hide)
+    }
+    pub fn show_caret() -> Result<(), Error> {
+        Self::queue_command(Show)
     }
     fn print(string: &str) -> Result<(), Error> {
         Self::queue_command(Print(string))

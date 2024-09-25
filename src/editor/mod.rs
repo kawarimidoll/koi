@@ -83,6 +83,7 @@ impl Editor {
         Ok(())
     }
     fn refresh_screen(&mut self) -> Result<(), Error> {
+        Terminal::hide_caret()?;
         if self.should_quit {
             Terminal::clear_screen()?;
             Terminal::move_caret_to(Position::default())?;
@@ -90,6 +91,7 @@ impl Editor {
             self.render()?;
             Terminal::move_caret_to(self.cursor_position)?;
         }
+        Terminal::show_caret()?;
         Terminal::execute()?;
         Ok(())
     }
