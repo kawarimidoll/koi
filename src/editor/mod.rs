@@ -97,10 +97,12 @@ impl Editor {
     }
     pub fn render(&self) -> Result<(), Error> {
         // render function
-        let height = Terminal::size()?.height;
+        let Size { width, height } = Terminal::size()?;
         for current_row in 0..height.saturating_sub(1) {
             if let Some(line) = self.lines.get(current_row) {
-                Terminal::print_row(current_row, line)?;
+                let mut l = String::from(line);
+                l.truncate(width);
+                Terminal::print_row(current_row, &l)?;
                 continue;
             }
             Terminal::print_row(current_row, "~\r\n")?;
