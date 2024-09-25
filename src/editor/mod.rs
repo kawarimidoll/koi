@@ -1,6 +1,6 @@
 use crossterm::event::{
     read,
-    Event::Key,
+    Event::{Key, Resize},
     KeyCode::{self, Char, Down, End, Home, Left, PageDown, PageUp, Right, Up},
     KeyEvent, KeyModifiers,
 };
@@ -16,6 +16,7 @@ pub struct Editor {
     cursor_position: Position,
     lines: Vec<String>,
     needs_redraw: bool,
+    size: Size,
 }
 
 impl Editor {
@@ -41,6 +42,7 @@ impl Editor {
         Terminal::initialize()?;
         self.handle_args();
         self.needs_redraw = true;
+        self.size = Terminal::size()?;
         let bottom_line = Terminal::size()?.height.saturating_sub(1);
         Terminal::print_row(bottom_line, "Type something. Press 'q' to quit.")?;
         Terminal::move_caret_to(self.cursor_position)?;
@@ -56,6 +58,9 @@ impl Editor {
                     if key_event.kind == crossterm::event::KeyEventKind::Press {
                         self.handle_key_event(&key_event)?;
                     }
+                }
+                Ok(Resize(width16, height16)) => {
+                    self.handle_resize_event(width16, height16);
                 }
                 Err(err) => {
                     Terminal::print_row(bottom_line, &format!("{err}"))?;
@@ -86,6 +91,14 @@ impl Editor {
             _ => (),
         }
         Ok(())
+    }
+    #[allow(clippy::as_conversions)]
+    fn handle_resize_event(&mut self, width16: u16, height16: u16) {
+        let width = width16 as usize;
+        let height = height16 as usize;
+        let _ = Terminal::print_row(height - 1, &format!("Resize to: {width:?}, {height:?}"));
+        self.size = Size { width, height };
+        self.needs_redraw = true;
     }
     fn refresh_screen(&mut self) -> Result<(), Error> {
         Terminal::hide_caret()?;
