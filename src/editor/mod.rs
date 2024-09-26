@@ -8,6 +8,8 @@ use crossterm::event::{
 use std::{cmp::min, fs::read_to_string, io::Error};
 use terminal::{Position, Size, Terminal};
 mod terminal;
+use line::Line;
+mod line;
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Default)]
 pub struct Location {
@@ -27,7 +29,7 @@ pub struct Editor {
     should_quit: bool,
     location: Location,
     scroll_offset: Position,
-    lines: Vec<String>,
+    lines: Vec<Line>,
     needs_redraw: bool,
     size: Size,
 }
@@ -42,11 +44,11 @@ impl Editor {
             }
         }
     }
-    pub fn load(filename: &str) -> Result<Vec<String>, Error> {
+    pub fn load(filename: &str) -> Result<Vec<Line>, Error> {
         let contents = read_to_string(filename)?;
         let mut lines = Vec::new();
         for line in contents.lines() {
-            lines.push(String::from(line));
+            lines.push(Line::from(line));
         }
         Ok(lines)
     }
@@ -194,7 +196,7 @@ impl Editor {
         self.scroll_into_view();
     }
     fn get_current_line_len(&self) -> usize {
-        self.lines.get(self.location.y).map_or(0, String::len)
+        self.lines.get(self.location.y).map_or(0, Line::len)
     }
     fn get_lines_count(&self) -> usize {
         self.lines.len()
@@ -270,9 +272,9 @@ mod tests {
         assert!(result.is_ok());
         let lines = result.unwrap();
         assert_eq!(lines.len(), 3);
-        assert_eq!(lines[0], "# this is test file for load");
-        assert_eq!(lines[1], "");
-        assert_eq!(lines[2], "this is sample text");
+        assert_eq!(lines[0].content(), "# this is test file for load");
+        assert_eq!(lines[1].content(), "");
+        assert_eq!(lines[2].content(), "this is sample text");
     }
 
     #[test]
@@ -287,7 +289,10 @@ mod tests {
     fn test_move_left() {
         let mut editor = Editor::default();
         editor.size = Size::new(10, 10);
-        editor.lines = vec!["this".to_string(), "is".to_string(), "test.".to_string()];
+        editor.lines = vec!["this", "is", "test."]
+            .iter()
+            .map(|str| Line::from(*str))
+            .collect();
         // Left on (0, 0) -> (0, 0)
         editor.move_position(Left);
         assert_eq!(editor.caret_position(), Position::new(0, 0));
@@ -305,7 +310,10 @@ mod tests {
     fn test_move_right() {
         let mut editor = Editor::default();
         editor.size = Size::new(10, 10);
-        editor.lines = vec!["this".to_string(), "is".to_string(), "test.".to_string()];
+        editor.lines = vec!["this", "is", "test."]
+            .iter()
+            .map(|str| Line::from(*str))
+            .collect();
         // Right on (0, 0) -> (1, 0)
         editor.move_position(Right);
         assert_eq!(editor.caret_position(), Position::new(1, 0));
@@ -323,7 +331,10 @@ mod tests {
     fn test_move_up() {
         let mut editor = Editor::default();
         editor.size = Size::new(10, 10);
-        editor.lines = vec!["this".to_string(), "is".to_string(), "test.".to_string()];
+        editor.lines = vec!["this", "is", "test."]
+            .iter()
+            .map(|str| Line::from(*str))
+            .collect();
         // Up on (0, 0) -> (0, 0)
         editor.move_position(Up);
         assert_eq!(editor.caret_position(), Position::new(0, 0));
@@ -343,7 +354,10 @@ mod tests {
     fn test_move_down() {
         let mut editor = Editor::default();
         editor.size = Size::new(10, 10);
-        editor.lines = vec!["this".to_string(), "is".to_string(), "test.".to_string()];
+        editor.lines = vec!["this", "is", "test."]
+            .iter()
+            .map(|str| Line::from(*str))
+            .collect();
         // Down on (0, 0) -> (0, 1)
         editor.move_position(Down);
         assert_eq!(editor.caret_position(), Position::new(0, 1));
