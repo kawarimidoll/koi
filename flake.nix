@@ -93,7 +93,7 @@
             buildInputs = with pkgs; [ cargo ];
             program = toString (
               pkgs.writeShellScript "cargo-test" ''
-                cargo test
+                cargo test -- "$@"
               ''
             );
           };
