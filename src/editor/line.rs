@@ -1,16 +1,27 @@
+use super::text_fragment::TextFragment;
 use std::{fmt, ops::Deref};
+use unicode_segmentation::UnicodeSegmentation;
 
-#[derive(Eq, PartialEq, Debug, Default)]
+#[derive(Default)]
 pub struct Line {
+    fragments: Vec<TextFragment>,
     string: String,
 }
 
 #[allow(dead_code)]
 impl Line {
     pub fn from(string: &str) -> Self {
+        debug_assert!(string.is_empty() || string.lines().count() == 1);
         Self {
+            fragments: Self::string_to_fragments(string),
             string: String::from(string),
         }
+    }
+    fn string_to_fragments(string: &str) -> Vec<TextFragment> {
+        string
+            .graphemes(true)
+            .map(|grapheme| TextFragment::new(grapheme))
+            .collect()
     }
     pub fn content(&self) -> &str {
         &self.string

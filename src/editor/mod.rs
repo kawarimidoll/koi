@@ -10,6 +10,7 @@ use terminal::{Position, Size, Terminal};
 mod terminal;
 use line::Line;
 mod line;
+mod text_fragment;
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Default)]
 pub struct Location {
