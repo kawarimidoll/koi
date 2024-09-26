@@ -26,6 +26,16 @@ impl Line {
     pub fn content(&self) -> &str {
         &self.string
     }
+    pub fn grapheme_count(&self) -> usize {
+        self.fragments.len()
+    }
+    pub fn grapheme_idx_to_byte_idx(&self, grapheme_idx: usize) -> usize {
+        self.fragments
+            .iter()
+            .take(grapheme_idx)
+            .map(|fragment| fragment.width)
+            .sum()
+    }
     pub fn len(&self) -> usize {
         self.string.len()
     }
@@ -51,5 +61,12 @@ mod tests {
     fn test_from() {
         let line = Line::from("test_from");
         assert_eq!(line.content(), "test_from");
+        assert_eq!(line.grapheme_count(), 9);
+        assert_eq!(line.grapheme_idx_to_byte_idx(5), 5);
+
+        let line = Line::from("こんにちは");
+        assert_eq!(line.content(), "こんにちは");
+        assert_eq!(line.grapheme_count(), 5);
+        assert_eq!(line.grapheme_idx_to_byte_idx(2), 4);
     }
 }
