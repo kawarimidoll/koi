@@ -1,3 +1,4 @@
+// 日本語🇯🇵の表示テスト
 use crossterm::event::{
     read,
     Event::{Key, Resize},
@@ -5,9 +6,7 @@ use crossterm::event::{
     KeyEvent, KeyModifiers,
 };
 use std::{cmp::min, fs::read_to_string, io::Error};
-use terminal::{Position, Size};
-
-use terminal::Terminal;
+use terminal::{Position, Size, Terminal};
 mod terminal;
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Default)]
@@ -62,7 +61,7 @@ impl Editor {
         result.unwrap();
     }
 
-    pub fn repl(&mut self) -> Result<(), Error> {
+    fn repl(&mut self) -> Result<(), Error> {
         let bottom_line = self.size.height.saturating_sub(1);
         Terminal::print_row(bottom_line, "Type something. Press 'q' to quit.")?;
         self.move_caret();
