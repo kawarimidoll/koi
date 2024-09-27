@@ -9,18 +9,18 @@ use unicode_segmentation::UnicodeSegmentation;
 pub struct Line {
     fragments: Vec<TextFragment>,
     string: String,
-    len: usize,
+    col_width: usize,
 }
 
 #[allow(dead_code)]
 impl Line {
     pub fn from(string: &str) -> Self {
         debug_assert!(string.is_empty() || string.lines().count() == 1);
-        let (fragments, len) = Self::string_to_fragments(string);
+        let (fragments, col_width) = Self::string_to_fragments(string);
         Self {
             fragments,
             string: String::from(string),
-            len,
+            col_width,
         }
     }
     fn string_to_fragments(string: &str) -> (Vec<TextFragment>, usize) {
@@ -87,8 +87,8 @@ impl Line {
             .map(|fragment| fragment.width)
             .sum()
     }
-    pub fn len(&self) -> usize {
-        self.len
+    pub fn col_width(&self) -> usize {
+        self.col_width
     }
 }
 
@@ -113,7 +113,7 @@ mod tests {
         let line = Line::from("test_from");
         assert_eq!(line.content(), "test_from");
         assert_eq!(line.grapheme_count(), 9);
-        assert_eq!(line.len(), 9);
+        assert_eq!(line.col_width(), 9);
         assert_eq!(line.grapheme_idx_to_byte_idx(5), 5);
         assert_eq!(
             line.get_fragment_by_byte_idx(4).map_or("", |f| &f.grapheme),
@@ -129,7 +129,7 @@ mod tests {
         let line = Line::from("こんにちは");
         assert_eq!(line.content(), "こんにちは");
         assert_eq!(line.grapheme_count(), 5);
-        assert_eq!(line.len(), 10);
+        assert_eq!(line.col_width(), 10);
         assert_eq!(line.grapheme_idx_to_byte_idx(2), 4);
         assert_eq!(
             line.get_fragment_by_byte_idx(4).map_or("", |f| &f.grapheme),

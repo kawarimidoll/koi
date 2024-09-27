@@ -156,7 +156,7 @@ impl Editor {
         for current_row in 0..height.saturating_sub(1) {
             let current_line = top.saturating_add(current_row);
             if let Some(line) = self.lines.get(current_line) {
-                let end = min(right, line.len());
+                let end = min(right, line.col_width());
                 let str = line.get_str_by_col_range(left..end);
                 Terminal::print_row(current_row, &str)?;
                 continue;
@@ -179,7 +179,7 @@ impl Editor {
             if let Some(fragment) = line.get_fragment_by_byte_idx(self.location.x) {
                 fragment.left_col_width
             } else {
-                self.get_current_line_len()
+                self.get_current_line_col_width()
             }
         } else {
             0
@@ -217,8 +217,8 @@ impl Editor {
         };
         self.scroll_into_view();
     }
-    fn get_current_line_len(&self) -> usize {
-        self.lines.get(self.location.y).map_or(0, Line::len)
+    fn get_current_line_col_width(&self) -> usize {
+        self.lines.get(self.location.y).map_or(0, Line::col_width)
     }
     fn get_lines_count(&self) -> usize {
         self.lines.len()
@@ -232,7 +232,7 @@ impl Editor {
             self.location.x = self.text_location_to_position().col;
         } else if self.location.y > 0 {
             self.move_up(1);
-            self.location.x = self.get_current_line_len();
+            self.location.x = self.get_current_line_col_width();
         }
     }
     fn move_right(&mut self) {
@@ -248,7 +248,7 @@ impl Editor {
             0
         };
 
-        if self.location.x < self.get_current_line_len() {
+        if self.location.x < self.get_current_line_col_width() {
             self.location.x = self.location.x.saturating_add(step);
         } else if self.location.y < self.get_lines_count() {
             self.move_down(1);
