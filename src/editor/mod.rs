@@ -157,7 +157,8 @@ impl Editor {
             let current_line = top.saturating_add(current_row);
             if let Some(line) = self.lines.get(current_line) {
                 let end = min(right, line.len());
-                Terminal::print_row(current_row, line.get(left..end).unwrap_or_default())?;
+                let str = line.get_str_by_col_range(left..end);
+                Terminal::print_row(current_row, &str)?;
                 continue;
             }
             Terminal::print_row(current_row, "~")?;
