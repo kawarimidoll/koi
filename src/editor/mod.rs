@@ -300,14 +300,15 @@ mod tests {
         assert_eq!(editor.size, Size::new(10, 10));
     }
 
+    fn gen_lines(src: &str) -> Vec<Line> {
+        src.lines().map(|str| Line::from(str)).collect()
+    }
+
     #[test]
     fn test_move_left() {
         let mut editor = Editor::default();
         editor.size = Size::new(10, 10);
-        editor.lines = vec!["this", "is", "test."]
-            .iter()
-            .map(|str| Line::from(*str))
-            .collect();
+        editor.lines = gen_lines("this\nis\ntest.\n");
         // Left on (0, 0) -> (0, 0)
         editor.move_position(Left);
         assert_eq!(editor.caret_position(), Position::new(0, 0));
@@ -325,10 +326,7 @@ mod tests {
     fn test_move_right() {
         let mut editor = Editor::default();
         editor.size = Size::new(10, 10);
-        editor.lines = vec!["this", "is", "test."]
-            .iter()
-            .map(|str| Line::from(*str))
-            .collect();
+        editor.lines = gen_lines("this\nis\ntest.\n");
         // Right on (0, 0) -> (1, 0)
         editor.move_position(Right);
         assert_eq!(editor.caret_position(), Position::new(1, 0));
@@ -346,10 +344,7 @@ mod tests {
     fn test_move_up() {
         let mut editor = Editor::default();
         editor.size = Size::new(10, 10);
-        editor.lines = vec!["this", "is", "test."]
-            .iter()
-            .map(|str| Line::from(*str))
-            .collect();
+        editor.lines = gen_lines("this\nis\ntest.\n");
         // Up on (0, 0) -> (0, 0)
         editor.move_position(Up);
         assert_eq!(editor.caret_position(), Position::new(0, 0));
@@ -369,10 +364,7 @@ mod tests {
     fn test_move_down() {
         let mut editor = Editor::default();
         editor.size = Size::new(10, 10);
-        editor.lines = vec!["this", "is", "test."]
-            .iter()
-            .map(|str| Line::from(*str))
-            .collect();
+        editor.lines = gen_lines("this\nis\ntest.\n");
         // Down on (0, 0) -> (0, 1)
         editor.move_position(Down);
         assert_eq!(editor.caret_position(), Position::new(0, 1));
