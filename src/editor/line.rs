@@ -18,9 +18,14 @@ impl Line {
         }
     }
     fn string_to_fragments(string: &str) -> Vec<TextFragment> {
+        let mut left_width = 0;
         string
-            .grapheme_indices(true)
-            .map(|(left_width, grapheme)| TextFragment::new(grapheme, left_width))
+            .graphemes(true)
+            .map(|grapheme| {
+                let fragment = TextFragment::new(grapheme, left_width);
+                left_width += fragment.width;
+                fragment
+            })
             .collect()
     }
     pub fn content(&self) -> &str {

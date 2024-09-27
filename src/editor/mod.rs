@@ -174,8 +174,18 @@ impl Editor {
             .saturating_sub(&self.render_offset)
     }
     fn text_location_to_position(&self) -> Position {
+        let col = if let Some(line) = self.lines.get(self.location.y) {
+            if let Some(fragment) = line.get_fragment_by_byte_idx(self.location.x) {
+                fragment.left_width
+            } else {
+                self.get_current_line_len()
+            }
+        } else {
+            0
+        };
+
         Position {
-            col: min(self.location.x, self.get_current_line_len()),
+            col,
             row: min(self.location.y, self.get_lines_count()),
         }
     }
@@ -218,6 +228,7 @@ impl Editor {
         self.location.x = self.text_location_to_position().col;
         if self.location.x > 0 {
             self.location.x -= 1;
+            self.location.x = self.text_location_to_position().col;
         } else if self.location.y > 0 {
             self.move_up(1);
             self.location.x = self.get_current_line_len();
@@ -225,8 +236,19 @@ impl Editor {
     }
     fn move_right(&mut self) {
         self.location.x = self.text_location_to_position().col;
+
+        let step = if let Some(line) = self.lines.get(self.location.y) {
+            if let Some(fragment) = line.get_fragment_by_byte_idx(self.location.x) {
+                fragment.width
+            } else {
+                1
+            }
+        } else {
+            0
+        };
+
         if self.location.x < self.get_current_line_len() {
-            self.location.x = self.location.x.saturating_add(1);
+            self.location.x = self.location.x.saturating_add(step);
         } else if self.location.y < self.get_lines_count() {
             self.move_down(1);
             self.location.x = 0;
@@ -316,6 +338,18 @@ mod tests {
         editor.location = Location::new(0, 1);
         editor.move_position(Left);
         assert_eq!(editor.caret_position(), Position::new(4, 0));
+
+        editor.lines = gen_lines("aあbいc\n");
+        editor.location = Location::new(6,0);
+        // Left on (6, 0) -> (4, 0) -> (3, 0) -> (1, 0) -> (0, 0)
+        editor.move_position(Left);
+        assert_eq!(editor.caret_position(), Position::new(4, 0));
+        editor.move_position(Left);
+        assert_eq!(editor.caret_position(), Position::new(3, 0));
+        editor.move_position(Left);
+        assert_eq!(editor.caret_position(), Position::new(1, 0));
+        editor.move_position(Left);
+        assert_eq!(editor.caret_position(), Position::new(0, 0));
     }
 
     #[test]
@@ -334,6 +368,18 @@ mod tests {
         editor.location = Location::new(4, 0);
         editor.move_position(Right);
         assert_eq!(editor.caret_position(), Position::new(0, 1));
+
+        editor.lines = gen_lines("aあbいc\n");
+        editor.location = Location::default();
+        // Right on (0, 0) -> (1, 0) -> (3, 0) -> (4, 0) -> (6, 0)
+        editor.move_position(Right);
+        assert_eq!(editor.caret_position(), Position::new(1, 0));
+        editor.move_position(Right);
+        assert_eq!(editor.caret_position(), Position::new(3, 0));
+        editor.move_position(Right);
+        assert_eq!(editor.caret_position(), Position::new(4, 0));
+        editor.move_position(Right);
+        assert_eq!(editor.caret_position(), Position::new(6, 0));
     }
 
     #[test]
