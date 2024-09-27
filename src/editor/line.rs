@@ -9,27 +9,32 @@ use unicode_segmentation::UnicodeSegmentation;
 pub struct Line {
     fragments: Vec<TextFragment>,
     string: String,
+    len: usize,
 }
 
 #[allow(dead_code)]
 impl Line {
     pub fn from(string: &str) -> Self {
         debug_assert!(string.is_empty() || string.lines().count() == 1);
+        let (fragments, len) = Self::string_to_fragments(string);
         Self {
-            fragments: Self::string_to_fragments(string),
+            fragments,
             string: String::from(string),
+            len,
         }
     }
-    fn string_to_fragments(string: &str) -> Vec<TextFragment> {
+    fn string_to_fragments(string: &str) -> (Vec<TextFragment>, usize) {
         let mut left_width = 0;
-        string
+        let fragments = string
             .graphemes(true)
             .map(|grapheme| {
                 let fragment = TextFragment::new(grapheme, left_width);
                 left_width += fragment.width;
                 fragment
             })
-            .collect()
+            .collect();
+
+        (fragments, left_width)
     }
     pub fn content(&self) -> &str {
         &self.string
@@ -83,7 +88,7 @@ impl Line {
             .sum()
     }
     pub fn len(&self) -> usize {
-        self.string.len()
+        self.len
     }
 }
 
@@ -108,6 +113,7 @@ mod tests {
         let line = Line::from("test_from");
         assert_eq!(line.content(), "test_from");
         assert_eq!(line.grapheme_count(), 9);
+        assert_eq!(line.len(), 9);
         assert_eq!(line.grapheme_idx_to_byte_idx(5), 5);
         assert_eq!(
             line.get_fragment_by_byte_idx(4).map_or("", |f| &f.grapheme),
@@ -123,6 +129,7 @@ mod tests {
         let line = Line::from("こんにちは");
         assert_eq!(line.content(), "こんにちは");
         assert_eq!(line.grapheme_count(), 5);
+        assert_eq!(line.len(), 10);
         assert_eq!(line.grapheme_idx_to_byte_idx(2), 4);
         assert_eq!(
             line.get_fragment_by_byte_idx(4).map_or("", |f| &f.grapheme),
