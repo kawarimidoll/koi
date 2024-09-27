@@ -3,16 +3,16 @@ use unicode_width::UnicodeWidthStr;
 pub struct TextFragment {
     pub grapheme: String,
     pub width: usize,
-    pub left_width: usize,
+    pub left_col_width: usize,
 }
 
 impl TextFragment {
-    pub fn new(grapheme: &str, left_width: usize) -> Self {
+    pub fn new(grapheme: &str, left_col_width: usize) -> Self {
         let width = if grapheme.width() <= 1 { 1 } else { 2 };
         Self {
             grapheme: String::from(grapheme),
             width,
-            left_width,
+            left_col_width,
         }
     }
 }

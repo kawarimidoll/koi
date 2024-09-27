@@ -115,7 +115,7 @@ impl Editor {
             if let Some(fragment) = line.get_fragment_by_byte_idx(self.location.x) {
                 &format!(
                     "{}, {}, {}",
-                    fragment.grapheme, fragment.width, fragment.left_width
+                    fragment.grapheme, fragment.width, fragment.left_col_width
                 )
             } else {
                 ""
@@ -177,7 +177,7 @@ impl Editor {
     fn text_location_to_position(&self) -> Position {
         let col = if let Some(line) = self.lines.get(self.location.y) {
             if let Some(fragment) = line.get_fragment_by_byte_idx(self.location.x) {
-                fragment.left_width
+                fragment.left_col_width
             } else {
                 self.get_current_line_len()
             }
@@ -341,7 +341,7 @@ mod tests {
         assert_eq!(editor.caret_position(), Position::new(4, 0));
 
         editor.lines = gen_lines("aあbいc\n");
-        editor.location = Location::new(6,0);
+        editor.location = Location::new(6, 0);
         // Left on (6, 0) -> (4, 0) -> (3, 0) -> (1, 0) -> (0, 0)
         editor.move_position(Left);
         assert_eq!(editor.caret_position(), Position::new(4, 0));
