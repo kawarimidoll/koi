@@ -47,11 +47,7 @@ impl Editor {
     }
     pub fn load(filename: &str) -> Result<Vec<Line>, Error> {
         let contents = read_to_string(filename)?;
-        let mut lines = Vec::new();
-        for line in contents.lines() {
-            lines.push(Line::from(line));
-        }
-        Ok(lines)
+        Ok(contents.lines().map(|str| Line::from(str)).collect())
     }
 
     pub fn run(&mut self) {
