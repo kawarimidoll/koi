@@ -1,5 +1,8 @@
 use super::text_fragment::TextFragment;
-use std::{fmt, ops::Deref};
+use std::{
+    fmt,
+    ops::{Deref, Range},
+};
 use unicode_segmentation::UnicodeSegmentation;
 
 #[derive(Default)]
@@ -33,6 +36,34 @@ impl Line {
     }
     pub fn grapheme_count(&self) -> usize {
         self.fragments.len()
+    }
+    pub fn get_str_by_col_range(&self, range: Range<usize>) -> String {
+        // Range<usize> must have start and end
+        let mut acc = 0;
+        let mut start = 0;
+        let mut end = 0;
+        let mut set_start = false;
+        // println!("range: {:?}", range);
+        for (i, fragment) in self.fragments.iter().enumerate() {
+            if !set_start {
+                if acc >= range.start {
+                    start = i;
+                    set_start = true;
+                }
+            }
+            acc += fragment.width;
+            if set_start {
+                if acc >= range.end {
+                    end = i + 1;
+                    break;
+                }
+            }
+        }
+        // println!("start: {start}, end: {end}, acc: {acc}");
+        self.fragments[start..end]
+            .iter()
+            .map(|fragment| fragment.grapheme.clone())
+            .collect()
     }
     pub fn get_fragment_by_byte_idx(&self, byte_idx: usize) -> Option<&TextFragment> {
         let mut acc = 0;
@@ -87,6 +118,8 @@ mod tests {
             "f"
         );
 
+        assert_eq!(line.get_str_by_col_range(2..5), "st_");
+
         let line = Line::from("こんにちは");
         assert_eq!(line.content(), "こんにちは");
         assert_eq!(line.grapheme_count(), 5);
@@ -99,5 +132,6 @@ mod tests {
             line.get_fragment_by_byte_idx(5).map_or("", |f| &f.grapheme),
             "に"
         );
+        assert_eq!(line.get_str_by_col_range(2..6), "んに");
     }
 }
