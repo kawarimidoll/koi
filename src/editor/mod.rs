@@ -29,7 +29,7 @@ impl Location {
 pub struct Editor {
     should_quit: bool,
     location: Location,
-    scroll_offset: Position,
+    render_offset: Position,
     lines: Vec<Line>,
     needs_redraw: bool,
     size: Size,
@@ -113,7 +113,7 @@ impl Editor {
         let Position {
             col: off_c,
             row: off_r,
-        } = self.scroll_offset;
+        } = self.render_offset;
         let _ = Terminal::print_row(
             height - 1,
             &format!("loc: {x},{y}, pos: {col},{row}, off: {off_c},{off_r}"),
@@ -140,8 +140,8 @@ impl Editor {
             return Ok(());
         }
         let Size { width, height } = size;
-        let top = self.scroll_offset.row;
-        let left = self.scroll_offset.col;
+        let top = self.render_offset.row;
+        let left = self.render_offset.col;
         let right = left.saturating_add(width);
         for current_row in 0..height.saturating_sub(1) {
             let current_line = top.saturating_add(current_row);
@@ -161,7 +161,7 @@ impl Editor {
     }
     fn caret_position(&self) -> Position {
         self.text_location_to_position()
-            .saturating_sub(&self.scroll_offset)
+            .saturating_sub(&self.render_offset)
     }
     fn text_location_to_position(&self) -> Position {
         Position {
@@ -178,15 +178,15 @@ impl Editor {
             Home => self.location.x = 0,
             End => self.location.x = usize::MAX,
             PageUp => {
-                let off_r = self.scroll_offset.row;
+                let off_r = self.render_offset.row;
                 self.move_up(self.size.height);
-                self.scroll_offset.row = off_r.saturating_sub(self.size.height);
+                self.render_offset.row = off_r.saturating_sub(self.size.height);
                 self.needs_redraw = true;
             }
             PageDown => {
-                let off_r = self.scroll_offset.row;
+                let off_r = self.render_offset.row;
                 self.move_down(self.size.height);
-                self.scroll_offset.row = min(
+                self.render_offset.row = min(
                     off_r.saturating_add(self.size.height),
                     self.get_lines_count().saturating_sub(self.size.height),
                 );
@@ -236,19 +236,19 @@ impl Editor {
         let Position { col, row } = self.text_location_to_position();
         let Size { width, height } = self.size;
         // horizontal
-        if col < self.scroll_offset.col {
-            self.scroll_offset.col = col;
+        if col < self.render_offset.col {
+            self.render_offset.col = col;
             self.needs_redraw = true;
-        } else if col >= self.scroll_offset.col.saturating_add(width) {
-            self.scroll_offset.col = col.saturating_add(1).saturating_sub(width);
+        } else if col >= self.render_offset.col.saturating_add(width) {
+            self.render_offset.col = col.saturating_add(1).saturating_sub(width);
             self.needs_redraw = true;
         }
         // vertical
-        if row < self.scroll_offset.row {
-            self.scroll_offset.row = row;
+        if row < self.render_offset.row {
+            self.render_offset.row = row;
             self.needs_redraw = true;
-        } else if row >= self.scroll_offset.row.saturating_add(height) {
-            self.scroll_offset.row = row.saturating_add(1).saturating_sub(height);
+        } else if row >= self.render_offset.row.saturating_add(height) {
+            self.render_offset.row = row.saturating_add(1).saturating_sub(height);
             self.needs_redraw = true;
         }
     }
