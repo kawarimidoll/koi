@@ -114,9 +114,23 @@ impl Editor {
             col: off_c,
             row: off_r,
         } = self.render_offset;
+
+        let info = if let Some(line) = self.lines.get(self.location.y) {
+            if let Some(fragment) = line.get_fragment_by_byte_idx(self.location.x) {
+                &format!(
+                    "{}, {}, {}",
+                    fragment.grapheme, fragment.width, fragment.left_width
+                )
+            } else {
+                ""
+            }
+        } else {
+            ""
+        };
+
         let _ = Terminal::print_row(
             height - 1,
-            &format!("loc: {x},{y}, pos: {col},{row}, off: {off_c},{off_r}"),
+            &format!("loc: {x},{y}, pos: {col},{row}, off: {off_c},{off_r}, [{info}]"),
         );
     }
     #[allow(clippy::as_conversions)]
