@@ -67,7 +67,7 @@ impl Line {
             .map(|fragment| fragment.grapheme.clone())
             .collect()
     }
-    pub fn get_fragment_by_byte_idx(&self, byte_idx: usize) -> Option<&TextFragment> {
+    pub fn get_fragment_by_col_idx(&self, byte_idx: usize) -> Option<&TextFragment> {
         let mut acc = 0;
         for fragment in self.fragments.iter() {
             acc += fragment.width();
@@ -101,11 +101,11 @@ mod tests {
         assert_eq!(line.col_width(), 9);
         assert_eq!(line.grapheme_idx_to_byte_idx(5), 5);
         assert_eq!(
-            line.get_fragment_by_byte_idx(4).map_or("", |f| &f.grapheme),
+            line.get_fragment_by_col_idx(4).map_or("", |f| &f.grapheme),
             "_"
         );
         assert_eq!(
-            line.get_fragment_by_byte_idx(5).map_or("", |f| &f.grapheme),
+            line.get_fragment_by_col_idx(5).map_or("", |f| &f.grapheme),
             "f"
         );
 
@@ -117,11 +117,11 @@ mod tests {
         assert_eq!(line.col_width(), 10);
         assert_eq!(line.grapheme_idx_to_byte_idx(2), 4);
         assert_eq!(
-            line.get_fragment_by_byte_idx(4).map_or("", |f| &f.grapheme),
+            line.get_fragment_by_col_idx(4).map_or("", |f| &f.grapheme),
             "に"
         );
         assert_eq!(
-            line.get_fragment_by_byte_idx(5).map_or("", |f| &f.grapheme),
+            line.get_fragment_by_col_idx(5).map_or("", |f| &f.grapheme),
             "に"
         );
         assert_eq!(line.get_str_by_col_range(2..6), "んに");

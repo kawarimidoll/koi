@@ -115,7 +115,7 @@ impl Editor {
         } = self.render_offset;
 
         let info = if let Some(line) = self.lines.get(self.location.y) {
-            if let Some(fragment) = line.get_fragment_by_byte_idx(self.location.x) {
+            if let Some(fragment) = line.get_fragment_by_col_idx(self.location.x) {
                 &format!(
                     "{}, {}, {}",
                     fragment.grapheme, fragment.width(), fragment.left_col_width
@@ -183,7 +183,7 @@ impl Editor {
     }
     fn text_location_to_position(&self) -> Position {
         let col = if let Some(line) = self.lines.get(self.location.y) {
-            if let Some(fragment) = line.get_fragment_by_byte_idx(self.location.x) {
+            if let Some(fragment) = line.get_fragment_by_col_idx(self.location.x) {
                 fragment.left_col_width
             } else {
                 line.col_width()
@@ -246,7 +246,7 @@ impl Editor {
         self.location.x = self.text_location_to_position().col;
 
         let step = if let Some(line) = self.lines.get(self.location.y) {
-            if let Some(fragment) = line.get_fragment_by_byte_idx(self.location.x) {
+            if let Some(fragment) = line.get_fragment_by_col_idx(self.location.x) {
                 fragment.width()
             } else {
                 1
