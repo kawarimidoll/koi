@@ -2,7 +2,7 @@ use unicode_width::UnicodeWidthStr;
 
 pub struct TextFragment {
     pub grapheme: String,
-    pub width: usize,
+    width: usize,
     pub left_col_width: usize,
 }
 
@@ -15,6 +15,9 @@ impl TextFragment {
             left_col_width,
         }
     }
+    pub fn width(&self) -> usize {
+        self.width
+    }
 }
 
 #[cfg(test)]
@@ -26,11 +29,11 @@ mod tests {
         // normal character
         let f = TextFragment::new("a", 0);
         assert_eq!(f.grapheme, "a");
-        assert_eq!(f.width, 1);
+        assert_eq!(f.width(), 1);
 
         // full-width character
         let f = TextFragment::new("緑", 0);
         assert_eq!(f.grapheme, "緑");
-        assert_eq!(f.width, 2);
+        assert_eq!(f.width(), 2);
     }
 }

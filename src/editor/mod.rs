@@ -118,7 +118,7 @@ impl Editor {
             if let Some(fragment) = line.get_fragment_by_byte_idx(self.location.x) {
                 &format!(
                     "{}, {}, {}",
-                    fragment.grapheme, fragment.width, fragment.left_col_width
+                    fragment.grapheme, fragment.width(), fragment.left_col_width
                 )
             } else {
                 ""
@@ -247,7 +247,7 @@ impl Editor {
 
         let step = if let Some(line) = self.lines.get(self.location.y) {
             if let Some(fragment) = line.get_fragment_by_byte_idx(self.location.x) {
-                fragment.width
+                fragment.width()
             } else {
                 1
             }

@@ -26,7 +26,7 @@ impl Line {
             .graphemes(true)
             .map(|grapheme| {
                 let fragment = TextFragment::new(grapheme, left_width);
-                left_width += fragment.width;
+                left_width += fragment.width();
                 fragment
             })
             .collect();
@@ -53,7 +53,7 @@ impl Line {
                     set_start = true;
                 }
             }
-            acc += fragment.width;
+            acc += fragment.width();
             if set_start {
                 if acc >= range.end {
                     end = i + 1;
@@ -70,7 +70,7 @@ impl Line {
     pub fn get_fragment_by_byte_idx(&self, byte_idx: usize) -> Option<&TextFragment> {
         let mut acc = 0;
         for fragment in self.fragments.iter() {
-            acc += fragment.width;
+            acc += fragment.width();
             if acc > byte_idx {
                 return Some(fragment);
             }
@@ -81,7 +81,7 @@ impl Line {
         self.fragments
             .iter()
             .take(grapheme_idx)
-            .map(|fragment| fragment.width)
+            .map(|fragment| fragment.width())
             .sum()
     }
     pub fn col_width(&self) -> usize {
