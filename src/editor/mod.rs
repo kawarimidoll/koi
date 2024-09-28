@@ -186,7 +186,7 @@ impl Editor {
             if let Some(fragment) = line.get_fragment_by_byte_idx(self.location.x) {
                 fragment.left_col_width
             } else {
-                self.get_current_line_col_width()
+                line.col_width()
             }
         } else {
             0
