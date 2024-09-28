@@ -47,7 +47,10 @@ impl Editor {
     }
     pub fn load(filename: &str) -> Result<Vec<Line>, Error> {
         let contents = read_to_string(filename)?;
-        Ok(contents.lines().map(|str| Line::from(str)).collect())
+        Ok(Self::gen_lines(&contents))
+    }
+    fn gen_lines(src: &str) -> Vec<Line> {
+        src.lines().map(|str| Line::from(str)).collect()
     }
 
     pub fn run(&mut self) {
@@ -323,16 +326,12 @@ mod tests {
         assert_eq!(editor.size, Size::new(10, 10));
     }
 
-    fn gen_lines(src: &str) -> Vec<Line> {
-        src.lines().map(|str| Line::from(str)).collect()
-    }
-
     #[test]
     fn test_move_left() {
         let mut editor = Editor::default();
         editor.size = Size::new(10, 10);
 
-        editor.lines = gen_lines("a\nb\n");
+        editor.lines = Editor::gen_lines("a\nb\n");
         editor.location = Location::new(1, 1);
         editor.move_position(Left);
         assert_eq!(editor.caret_position(), Position::new(0, 1)); // wrap
@@ -344,7 +343,7 @@ mod tests {
         assert_eq!(editor.caret_position(), Position::new(0, 0)); // boundary
 
         // test for full-width character
-        editor.lines = gen_lines("aあbい\nうcえd\n");
+        editor.lines = Editor::gen_lines("aあbい\nうcえd\n");
         editor.location = Location::new(6, 1);
         editor.move_position(Left);
         assert_eq!(editor.caret_position(), Position::new(5, 1));
@@ -370,7 +369,7 @@ mod tests {
     fn test_move_right() {
         let mut editor = Editor::default();
         editor.size = Size::new(10, 10);
-        editor.lines = gen_lines("a\nb\n");
+        editor.lines = Editor::gen_lines("a\nb\n");
         editor.move_position(Right);
         assert_eq!(editor.caret_position(), Position::new(1, 0));
         editor.move_position(Right);
@@ -383,7 +382,7 @@ mod tests {
         assert_eq!(editor.caret_position(), Position::new(0, 2)); // boundary
 
         // test for full-width character
-        editor.lines = gen_lines("aあbい\nうcえd\n");
+        editor.lines = Editor::gen_lines("aあbい\nうcえd\n");
         editor.location = Location::default();
         editor.move_position(Right);
         assert_eq!(editor.caret_position(), Position::new(1, 0));
@@ -409,7 +408,7 @@ mod tests {
     fn test_move_up() {
         let mut editor = Editor::default();
         editor.size = Size::new(10, 10);
-        editor.lines = gen_lines("this\nis\ntest.\n");
+        editor.lines = Editor::gen_lines("this\nis\ntest.\n");
         editor.location = Location::new(3, 2);
         editor.move_position(Up);
         assert_eq!(editor.caret_position(), Position::new(2, 1)); // snap
@@ -419,7 +418,7 @@ mod tests {
         assert_eq!(editor.caret_position(), Position::new(3, 0)); // boundary
 
         // test for full-width character
-        editor.lines = gen_lines("aあ\nいb\ncう\nえe\n");
+        editor.lines = Editor::gen_lines("aあ\nいb\ncう\nえe\n");
         editor.location = Location::new(2, 3);
         editor.move_position(Up);
         assert_eq!(editor.caret_position(), Position::new(1, 2));
@@ -433,7 +432,7 @@ mod tests {
     fn test_move_down() {
         let mut editor = Editor::default();
         editor.size = Size::new(10, 10);
-        editor.lines = gen_lines("this\nis\ntest.\n");
+        editor.lines = Editor::gen_lines("this\nis\ntest.\n");
         editor.location = Location::new(3, 0);
         editor.move_position(Down);
         assert_eq!(editor.caret_position(), Position::new(2, 1)); // snap
@@ -445,7 +444,7 @@ mod tests {
         assert_eq!(editor.caret_position(), Position::new(0, 3)); // boundary
 
         // test for full-width character
-        editor.lines = gen_lines("aあ\nいb\ncう\nえe\n");
+        editor.lines = Editor::gen_lines("aあ\nいb\ncう\nえe\n");
         editor.location = Location::new(1, 0);
         editor.move_position(Down);
         assert_eq!(editor.caret_position(), Position::new(0, 1));
