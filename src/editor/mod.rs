@@ -139,12 +139,16 @@ impl Editor {
     }
     fn refresh_screen(&mut self) {
         let _ = Terminal::hide_caret();
-        let _ = self.render(self.size);
+        let _ = self.render(self.size, Terminal::print_row);
         self.move_caret();
         let _ = Terminal::show_caret();
         let _ = Terminal::execute();
     }
-    pub fn render(&mut self, size: Size) -> Result<(), Error> {
+    pub fn render<F: Fn(usize, &str) -> Result<(), Error>>(
+        &mut self,
+        size: Size,
+        renderer: F,
+    ) -> Result<(), Error> {
         // render function
         if !self.needs_redraw {
             return Ok(());
@@ -158,10 +162,10 @@ impl Editor {
             if let Some(line) = self.lines.get(current_line) {
                 let end = min(right, line.col_width());
                 let str = line.get_str_by_col_range(left..end);
-                Terminal::print_row(current_row, &str)?;
+                renderer(current_row, &str)?;
                 continue;
             }
-            Terminal::print_row(current_row, "~")?;
+            renderer(current_row, "~")?;
         }
         // the bottom line is reserved for messages
         self.needs_redraw = false;
