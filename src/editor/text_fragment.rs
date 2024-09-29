@@ -1,3 +1,4 @@
+use std::fmt;
 use unicode_width::UnicodeWidthStr;
 
 pub struct TextFragment {
@@ -45,6 +46,12 @@ impl TextFragment {
     }
     pub fn width(&self) -> usize {
         self.width
+    }
+}
+
+impl fmt::Display for TextFragment {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        write!(formatter, "{}", self.replacement.as_ref().unwrap_or(&self.grapheme))
     }
 }
 

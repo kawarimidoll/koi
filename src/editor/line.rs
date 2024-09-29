@@ -64,7 +64,7 @@ impl Line {
         // println!("start: {start}, end: {end}, acc: {acc}");
         self.fragments[start..end]
             .iter()
-            .map(|fragment| fragment.grapheme.clone())
+            .map(|fragment| format!("{fragment}"))
             .collect()
     }
     pub fn get_fragment_by_col_idx(&self, byte_idx: usize) -> Option<&TextFragment> {
