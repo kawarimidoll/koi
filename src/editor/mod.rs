@@ -58,10 +58,6 @@ impl Editor {
     }
 
     pub fn run(&mut self) {
-        self.repl();
-    }
-
-    fn repl(&mut self) {
         let bottom_line = self.size.height.saturating_sub(1);
         Terminal::print_row(bottom_line, "Type something. Press 'q' to quit.").unwrap();
         self.move_caret();
