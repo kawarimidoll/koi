@@ -24,6 +24,22 @@ pub struct Editor {
 }
 
 impl Editor {
+    pub fn new() -> Result<Self, Error> {
+        let current_hook = std::panic::take_hook();
+        std::panic::set_hook(Box::new(move |panic_info| {
+            let _ = Terminal::terminate();
+            current_hook(panic_info);
+        }));
+        Terminal::initialize()?;
+        let mut editor = Self::default();
+
+        editor.handle_args();
+        editor.needs_redraw = true;
+        editor.size = Terminal::size().unwrap_or_default();
+
+        Ok(editor)
+    }
+
     fn handle_args(&mut self) {
         let args: Vec<String> = std::env::args().collect();
         // only load the first file for now
@@ -42,10 +58,6 @@ impl Editor {
     }
 
     pub fn run(&mut self) {
-        Terminal::initialize().unwrap();
-        self.handle_args();
-        self.needs_redraw = true;
-        self.size = Terminal::size().unwrap_or_default();
         self.repl();
     }
 
