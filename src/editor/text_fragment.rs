@@ -8,9 +8,11 @@ pub struct TextFragment {
     replacement: Option<String>,
 }
 
+const TAB_WIDTH: usize = 4;
+
 impl TextFragment {
     pub fn new(grapheme: &str, left_col_width: usize) -> Self {
-        let replacement = Self::get_replacement(grapheme);
+        let replacement = Self::get_replacement(grapheme, left_col_width);
         let width = if replacement.is_some() {
             replacement.as_ref().unwrap().width()
         } else if grapheme.width() <= 1 {
@@ -25,11 +27,21 @@ impl TextFragment {
             replacement,
         }
     }
-    fn get_replacement(grapheme: &str) -> Option<String> {
-        let g_width = grapheme.width();
+    fn get_replacement(grapheme: &str, left_col_width: usize) -> Option<String> {
+        let g_width = if grapheme == "\t" {
+            // special case: tab
+            // left_col_width = 0: 4 - 0 % 4 = 4
+            // left_col_width = 1: 4 - 1 % 4 = 3
+            // left_col_width = 2: 4 - 2 % 4 = 2
+            // left_col_width = 3: 4 - 3 % 4 = 1
+            // left_col_width = 4: 4 - 4 % 4 = 0
+            TAB_WIDTH - left_col_width % TAB_WIDTH
+        } else {
+            grapheme.width()
+        };
         match grapheme {
             " " => None,
-            "\t" => Some("→".to_string()),
+            "\t" => Some(format!("→{}", " ".repeat(g_width - 1)).to_string()),
             _ if g_width > 0 && grapheme.trim().is_empty() => Some("␣".to_string()),
             _ if g_width == 0 => Some("·".to_string()),
             _ => {
@@ -51,7 +63,11 @@ impl TextFragment {
 
 impl fmt::Display for TextFragment {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        write!(formatter, "{}", self.replacement.as_ref().unwrap_or(&self.grapheme))
+        write!(
+            formatter,
+            "{}",
+            self.replacement.as_ref().unwrap_or(&self.grapheme)
+        )
     }
 }
 
@@ -76,8 +92,12 @@ mod tests {
         // tab
         let f = TextFragment::new("\t", 0);
         assert_eq!(f.grapheme, "\t");
-        assert_eq!(f.width(), 1);
-        assert_eq!(f.replacement, Some("→".to_string()));
+        assert_eq!(f.width(), 4);
+        assert_eq!(f.replacement, Some("→   ".to_string()));
+        let f = TextFragment::new("\t", 1);
+        assert_eq!(f.grapheme, "\t");
+        assert_eq!(f.width(), 3);
+        assert_eq!(f.replacement, Some("→  ".to_string()));
 
         // ctrl character
         let f = TextFragment::new("\x01", 0);
