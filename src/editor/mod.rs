@@ -46,14 +46,12 @@ impl Editor {
         self.handle_args();
         self.needs_redraw = true;
         self.size = Terminal::size().unwrap_or_default();
-        let result = self.repl();
-        // Terminal::terminate().unwrap();
-        result.unwrap();
+        self.repl();
     }
 
-    fn repl(&mut self) -> Result<(), Error> {
+    fn repl(&mut self) {
         let bottom_line = self.size.height.saturating_sub(1);
-        Terminal::print_row(bottom_line, "Type something. Press 'q' to quit.")?;
+        Terminal::print_row(bottom_line, "Type something. Press 'q' to quit.").unwrap();
         self.move_caret();
 
         loop {
@@ -72,15 +70,15 @@ impl Editor {
                     self.handle_resize_event(width16, height16);
                 }
                 Err(err) => {
-                    Terminal::print_row(bottom_line, &format!("{err}"))?;
+                    Terminal::print_row(bottom_line, &format!("{err}")).unwrap();
                 }
                 _ => {
-                    Terminal::print_row(bottom_line, "Unsupported event!")?;
+                    Terminal::print_row(bottom_line, "Unsupported event!").unwrap();
                 }
             }
         }
-        Ok(())
     }
+
     fn handle_key_event(&mut self, event: KeyEvent) {
         let height = self.size.height;
         let KeyEvent {
