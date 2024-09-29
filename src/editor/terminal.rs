@@ -44,16 +44,14 @@ impl Terminal {
         Self::enter_alternate_screen()?;
         Self::disable_line_wrap()?;
         Self::clear_screen()?;
-        Self::execute()?;
-        Ok(())
+        Self::execute()
     }
     pub fn terminate() -> Result<(), Error> {
         Self::leave_alternate_screen()?;
         Self::enable_line_wrap()?;
         Self::show_caret()?;
         Self::execute()?;
-        disable_raw_mode()?;
-        Ok(())
+        disable_raw_mode()
     }
     fn enter_alternate_screen() -> Result<(), Error> {
         Self::queue_command(EnterAlternateScreen)

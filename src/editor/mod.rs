@@ -59,7 +59,7 @@ impl Editor {
         self.needs_redraw = true;
         self.size = Terminal::size().unwrap_or_default();
         let result = self.repl();
-        Terminal::terminate().unwrap();
+        // Terminal::terminate().unwrap();
         result.unwrap();
     }
 
