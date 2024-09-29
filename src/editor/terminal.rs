@@ -81,7 +81,7 @@ impl Terminal {
     pub fn show_caret() -> Result<(), Error> {
         Self::queue_command(Show)
     }
-    fn print(string: &str) -> Result<(), Error> {
+    pub fn print(string: &str) -> Result<(), Error> {
         Self::queue_command(Print(string))
     }
     pub fn print_row(row: usize, line_text: &str) -> Result<(), Error> {

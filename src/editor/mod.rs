@@ -300,7 +300,7 @@ impl Drop for Editor {
     fn drop(&mut self) {
         let _ = Terminal::terminate();
         if self.should_quit {
-            let _ = Terminal::print_row(0, "Goodbye, koi!\r\n");
+            let _ = Terminal::print("Goodbye, koi!\r\n");
         }
     }
 }
