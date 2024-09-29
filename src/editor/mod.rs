@@ -198,21 +198,21 @@ impl Editor {
     }
     fn move_position(&mut self, code: KeyCode) {
         match code {
-            Left => self.move_left(),
-            Right => self.move_right(),
-            Up => self.move_up(1),
-            Down => self.move_down(1),
+            Left => self.move_prev_grapheme(),
+            Right => self.move_next_grapheme(),
+            Up => self.move_prev_line(1),
+            Down => self.move_next_line(1),
             Home => self.position.col = 0,
             End => self.position.col = usize::MAX,
             PageUp => {
                 let off_r = self.render_offset.row;
-                self.move_up(self.size.height);
+                self.move_prev_line(self.size.height);
                 self.render_offset.row = off_r.saturating_sub(self.size.height);
                 self.needs_redraw = true;
             }
             PageDown => {
                 let off_r = self.render_offset.row;
-                self.move_down(self.size.height);
+                self.move_next_line(self.size.height);
                 self.render_offset.row = min(
                     off_r.saturating_add(self.size.height),
                     self.get_lines_count().saturating_sub(self.size.height),
@@ -231,17 +231,17 @@ impl Editor {
     }
     #[allow(clippy::arithmetic_side_effects)]
     // allow this because check boundary condition by myself
-    fn move_left(&mut self) {
+    fn move_prev_grapheme(&mut self) {
         self.position.col = self.caret_snap_on_line().col;
         if self.position.col > 0 {
             self.position.col -= 1;
             self.position.col = self.caret_snap_on_line().col;
         } else if self.position.row > 0 {
-            self.move_up(1);
+            self.move_prev_line(1);
             self.position.col = self.get_current_line_col_width();
         }
     }
-    fn move_right(&mut self) {
+    fn move_next_grapheme(&mut self) {
         self.position.col = self.caret_snap_on_line().col;
 
         let step = if let Some(line) = self.lines.get(self.position.row) {
@@ -257,16 +257,16 @@ impl Editor {
         if self.position.col < self.get_current_line_col_width() {
             self.position.col = self.position.col.saturating_add(step);
         } else if self.position.row < self.get_lines_count() {
-            self.move_down(1);
+            self.move_next_line(1);
             self.position.col = 0;
         }
     }
-    fn move_up(&mut self, step: usize) {
+    fn move_prev_line(&mut self, step: usize) {
         if self.position.row > 0 {
             self.position.row = self.position.row.saturating_sub(step);
         }
     }
-    fn move_down(&mut self, step: usize) {
+    fn move_next_line(&mut self, step: usize) {
         if self.position.row < self.get_lines_count() {
             self.position.row = min(
                 self.position.row.saturating_add(step),
@@ -329,7 +329,7 @@ mod tests {
     }
 
     #[test]
-    fn test_move_left() {
+    fn test_move_prev_grapheme() {
         let mut editor = Editor::default();
         editor.size = Size::new(10, 10);
 
@@ -368,7 +368,7 @@ mod tests {
     }
 
     #[test]
-    fn test_move_right() {
+    fn test_move_next_grapheme() {
         let mut editor = Editor::default();
         editor.size = Size::new(10, 10);
         editor.lines = Editor::gen_lines("a\nb\n");
@@ -407,7 +407,7 @@ mod tests {
     }
 
     #[test]
-    fn test_move_up() {
+    fn test_move_prev_line() {
         let mut editor = Editor::default();
         editor.size = Size::new(10, 10);
         editor.lines = Editor::gen_lines("this\nis\ntest.\n");
@@ -431,7 +431,7 @@ mod tests {
     }
 
     #[test]
-    fn test_move_down() {
+    fn test_move_next_line() {
         let mut editor = Editor::default();
         editor.size = Size::new(10, 10);
         editor.lines = Editor::gen_lines("this\nis\ntest.\n");
