@@ -12,23 +12,11 @@ use line::Line;
 mod line;
 mod text_fragment;
 
-#[derive(Copy, Clone, Eq, PartialEq, Debug, Default)]
-pub struct Location {
-    // the position of the document
-    pub x: usize,
-    pub y: usize,
-}
-impl Location {
-    #[allow(dead_code)]
-    pub fn new(x: usize, y: usize) -> Self {
-        Self { x, y }
-    }
-}
-
 #[derive(Default)]
 pub struct Editor {
     should_quit: bool,
-    location: Location,
+    // position is col-row vertex from the document origin
+    position: Position,
     render_offset: Position,
     lines: Vec<Line>,
     needs_redraw: bool,
@@ -107,18 +95,23 @@ impl Editor {
             }
             _ => (),
         }
-        let Location { x, y } = self.location;
+        let Position {
+            col: doc_x,
+            row: doc_y,
+        } = self.position;
         let Position { col, row } = self.caret_position();
         let Position {
             col: off_c,
             row: off_r,
         } = self.render_offset;
 
-        let info = if let Some(line) = self.lines.get(self.location.y) {
-            if let Some(fragment) = line.get_fragment_by_col_idx(self.location.x) {
+        let info = if let Some(line) = self.lines.get(self.position.row) {
+            if let Some(fragment) = line.get_fragment_by_col_idx(self.position.col) {
                 &format!(
                     "{}, {}, {}",
-                    fragment.grapheme, fragment.width(), fragment.left_col_width
+                    fragment.grapheme,
+                    fragment.width(),
+                    fragment.left_col_width
                 )
             } else {
                 ""
@@ -129,7 +122,7 @@ impl Editor {
 
         let _ = Terminal::print_row(
             height - 1,
-            &format!("loc: {x},{y}, pos: {col},{row}, off: {off_c},{off_r}, [{info}]"),
+            &format!("loc: {doc_x},{doc_y}, pos: {col},{row}, off: {off_c},{off_r}, [{info}]"),
         );
     }
     #[allow(clippy::as_conversions)]
@@ -182,8 +175,8 @@ impl Editor {
             .saturating_sub(&self.render_offset)
     }
     fn text_location_to_position(&self) -> Position {
-        let col = if let Some(line) = self.lines.get(self.location.y) {
-            if let Some(fragment) = line.get_fragment_by_col_idx(self.location.x) {
+        let col = if let Some(line) = self.lines.get(self.position.row) {
+            if let Some(fragment) = line.get_fragment_by_col_idx(self.position.col) {
                 fragment.left_col_width
             } else {
                 line.col_width()
@@ -194,7 +187,7 @@ impl Editor {
 
         Position {
             col,
-            row: min(self.location.y, self.get_lines_count()),
+            row: min(self.position.row, self.get_lines_count()),
         }
     }
     fn move_position(&mut self, code: KeyCode) {
@@ -203,8 +196,8 @@ impl Editor {
             Right => self.move_right(),
             Up => self.move_up(1),
             Down => self.move_down(1),
-            Home => self.location.x = 0,
-            End => self.location.x = usize::MAX,
+            Home => self.position.col = 0,
+            End => self.position.col = usize::MAX,
             PageUp => {
                 let off_r = self.render_offset.row;
                 self.move_up(self.size.height);
@@ -225,7 +218,7 @@ impl Editor {
         self.scroll_into_view();
     }
     fn get_current_line_col_width(&self) -> usize {
-        self.lines.get(self.location.y).map_or(0, Line::col_width)
+        self.lines.get(self.position.row).map_or(0, Line::col_width)
     }
     fn get_lines_count(&self) -> usize {
         self.lines.len()
@@ -233,20 +226,20 @@ impl Editor {
     #[allow(clippy::arithmetic_side_effects)]
     // allow this because check boundary condition by myself
     fn move_left(&mut self) {
-        self.location.x = self.text_location_to_position().col;
-        if self.location.x > 0 {
-            self.location.x -= 1;
-            self.location.x = self.text_location_to_position().col;
-        } else if self.location.y > 0 {
+        self.position.col = self.text_location_to_position().col;
+        if self.position.col > 0 {
+            self.position.col -= 1;
+            self.position.col = self.text_location_to_position().col;
+        } else if self.position.row > 0 {
             self.move_up(1);
-            self.location.x = self.get_current_line_col_width();
+            self.position.col = self.get_current_line_col_width();
         }
     }
     fn move_right(&mut self) {
-        self.location.x = self.text_location_to_position().col;
+        self.position.col = self.text_location_to_position().col;
 
-        let step = if let Some(line) = self.lines.get(self.location.y) {
-            if let Some(fragment) = line.get_fragment_by_col_idx(self.location.x) {
+        let step = if let Some(line) = self.lines.get(self.position.row) {
+            if let Some(fragment) = line.get_fragment_by_col_idx(self.position.col) {
                 fragment.width()
             } else {
                 1
@@ -255,21 +248,24 @@ impl Editor {
             0
         };
 
-        if self.location.x < self.get_current_line_col_width() {
-            self.location.x = self.location.x.saturating_add(step);
-        } else if self.location.y < self.get_lines_count() {
+        if self.position.col < self.get_current_line_col_width() {
+            self.position.col = self.position.col.saturating_add(step);
+        } else if self.position.row < self.get_lines_count() {
             self.move_down(1);
-            self.location.x = 0;
+            self.position.col = 0;
         }
     }
     fn move_up(&mut self, step: usize) {
-        if self.location.y > 0 {
-            self.location.y = self.location.y.saturating_sub(step);
+        if self.position.row > 0 {
+            self.position.row = self.position.row.saturating_sub(step);
         }
     }
     fn move_down(&mut self, step: usize) {
-        if self.location.y < self.get_lines_count() {
-            self.location.y = min(self.location.y.saturating_add(step), self.get_lines_count());
+        if self.position.row < self.get_lines_count() {
+            self.position.row = min(
+                self.position.row.saturating_add(step),
+                self.get_lines_count(),
+            );
         }
     }
     fn scroll_into_view(&mut self) {
@@ -332,7 +328,7 @@ mod tests {
         editor.size = Size::new(10, 10);
 
         editor.lines = Editor::gen_lines("a\nb\n");
-        editor.location = Location::new(1, 1);
+        editor.position = Position::new(1, 1);
         editor.move_position(Left);
         assert_eq!(editor.caret_position(), Position::new(0, 1)); // wrap
         editor.move_position(Left);
@@ -344,7 +340,7 @@ mod tests {
 
         // test for full-width character
         editor.lines = Editor::gen_lines("aあbい\nうcえd\n");
-        editor.location = Location::new(6, 1);
+        editor.position = Position::new(6, 1);
         editor.move_position(Left);
         assert_eq!(editor.caret_position(), Position::new(5, 1));
         editor.move_position(Left);
@@ -383,7 +379,7 @@ mod tests {
 
         // test for full-width character
         editor.lines = Editor::gen_lines("aあbい\nうcえd\n");
-        editor.location = Location::default();
+        editor.position = Position::default();
         editor.move_position(Right);
         assert_eq!(editor.caret_position(), Position::new(1, 0));
         editor.move_position(Right);
@@ -409,7 +405,7 @@ mod tests {
         let mut editor = Editor::default();
         editor.size = Size::new(10, 10);
         editor.lines = Editor::gen_lines("this\nis\ntest.\n");
-        editor.location = Location::new(3, 2);
+        editor.position = Position::new(3, 2);
         editor.move_position(Up);
         assert_eq!(editor.caret_position(), Position::new(2, 1)); // snap
         editor.move_position(Up);
@@ -419,7 +415,7 @@ mod tests {
 
         // test for full-width character
         editor.lines = Editor::gen_lines("aあ\nいb\ncう\nえe\n");
-        editor.location = Location::new(2, 3);
+        editor.position = Position::new(2, 3);
         editor.move_position(Up);
         assert_eq!(editor.caret_position(), Position::new(1, 2));
         editor.move_position(Up);
@@ -433,7 +429,7 @@ mod tests {
         let mut editor = Editor::default();
         editor.size = Size::new(10, 10);
         editor.lines = Editor::gen_lines("this\nis\ntest.\n");
-        editor.location = Location::new(3, 0);
+        editor.position = Position::new(3, 0);
         editor.move_position(Down);
         assert_eq!(editor.caret_position(), Position::new(2, 1)); // snap
         editor.move_position(Down);
@@ -445,7 +441,7 @@ mod tests {
 
         // test for full-width character
         editor.lines = Editor::gen_lines("aあ\nいb\ncう\nえe\n");
-        editor.location = Location::new(1, 0);
+        editor.position = Position::new(1, 0);
         editor.move_position(Down);
         assert_eq!(editor.caret_position(), Position::new(0, 1));
         editor.move_position(Down);
