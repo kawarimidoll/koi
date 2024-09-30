@@ -12,6 +12,9 @@ use line::Line;
 mod line;
 mod text_fragment;
 
+// TODO 日本語が含まれる場合の画面端の処理
+// TODO 1行・1列ずつのスクロール
+
 #[derive(Default)]
 pub struct Editor {
     should_quit: bool,
@@ -196,6 +199,15 @@ impl Editor {
             row: min(self.position.row, self.get_lines_count()),
         }
     }
+    // fn scroll_screen(&mut self, code: KeyCode) {
+    //     match code {
+    //         Left => self.scroll_left(1),
+    //         Right => self.scroll_right(1),
+    //         Up => self.scroll_up(1),
+    //         Down => self.scroll_down(1),
+    //         _ => (),
+    //     };
+    // }
     fn move_position(&mut self, code: KeyCode) {
         match code {
             Left => self.move_prev_grapheme(),
