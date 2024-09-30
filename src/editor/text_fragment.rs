@@ -18,8 +18,8 @@ const TAB_WIDTH: usize = 4;
 impl TextFragment {
     pub fn new(grapheme: &str, left_col_width: usize) -> Self {
         let replacement = Self::get_replacement(grapheme, left_col_width);
-        let width = if replacement.is_some() {
-            replacement.as_ref().unwrap().width()
+        let width = if let Some(replace_str) = &replacement {
+            replace_str.width()
         } else if grapheme.width() <= 1 {
             1
         } else {
@@ -46,7 +46,7 @@ impl TextFragment {
         };
         match grapheme {
             " " => None,
-            "\t" => Some(format!("→{}", " ".repeat(g_width - 1)).to_string()),
+            "\t" => Some(format!("→{}", " ".repeat(g_width.saturating_sub(1))).to_string()),
             NBSP => Some(REPLACE_NBSP.to_string()),
             NNBSP => Some(REPLACE_NNBSP.to_string()),
             _ if g_width == 0 => Some("·".to_string()),
@@ -54,6 +54,7 @@ impl TextFragment {
                 let mut chars = grapheme.chars();
                 if let Some(ch) = chars.next() {
                     if ch.is_control() && chars.next().is_none() {
+                        #[allow(clippy::as_conversions, clippy::arithmetic_side_effects)]
                         let replacement = ((ch as u8) + 64) as char;
                         return Some(format!("^{replacement}").to_string());
                     }

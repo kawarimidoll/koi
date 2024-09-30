@@ -57,7 +57,7 @@ impl Editor {
         Ok(Self::gen_lines(&contents))
     }
     fn gen_lines(src: &str) -> Vec<Line> {
-        src.lines().map(|str| Line::from(str)).collect()
+        src.lines().map(Line::from).collect()
     }
 
     pub fn run(&mut self) {
@@ -130,7 +130,7 @@ impl Editor {
         };
 
         let _ = Terminal::print_row(
-            height - 1,
+            height.saturating_sub(1),
             &format!("loc: {doc_x},{doc_y}, pos: {col},{row}, off: {off_c},{off_r}, [{info}]"),
         );
     }

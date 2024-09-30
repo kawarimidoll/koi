@@ -2,6 +2,9 @@ use super::text_fragment::TextFragment;
 use std::ops::Range;
 use unicode_segmentation::UnicodeSegmentation;
 
+// https://rust-lang.github.io/rust-clippy/master/index.html#/format_collect
+use std::fmt::Write;
+
 #[derive(Default)]
 pub struct Line {
     fragments: Vec<TextFragment>,
@@ -26,7 +29,7 @@ impl Line {
             .graphemes(true)
             .map(|grapheme| {
                 let fragment = TextFragment::new(grapheme, left_width);
-                left_width += fragment.width();
+                left_width = left_width.saturating_add(fragment.width());
                 fragment
             })
             .collect();
@@ -47,30 +50,28 @@ impl Line {
         let mut set_start = false;
         // println!("range: {:?}", range);
         for (i, fragment) in self.fragments.iter().enumerate() {
-            if !set_start {
-                if acc >= range.start {
-                    start = i;
-                    set_start = true;
-                }
+            if !set_start && acc >= range.start {
+                start = i;
+                set_start = true;
             }
-            acc += fragment.width();
-            if set_start {
-                if acc >= range.end {
-                    end = i + 1;
-                    break;
-                }
+            acc = acc.saturating_add(fragment.width());
+            if set_start && acc >= range.end {
+                end = i.saturating_add(1);
+                break;
             }
         }
         // println!("start: {start}, end: {end}, acc: {acc}");
         self.fragments[start..end]
             .iter()
-            .map(|fragment| format!("{fragment}"))
-            .collect()
+            .fold(String::new(), |mut output, fragment| {
+                let _ = write!(output, "{fragment}");
+                output
+            })
     }
     pub fn get_fragment_by_col_idx(&self, col_idx: usize) -> Option<&TextFragment> {
-        let mut acc = 0;
-        for fragment in self.fragments.iter() {
-            acc += fragment.width();
+        let mut acc: usize = 0;
+        for fragment in &self.fragments {
+            acc = acc.saturating_add(fragment.width());
             if acc > col_idx {
                 return Some(fragment);
             }
@@ -81,7 +82,7 @@ impl Line {
         self.fragments
             .iter()
             .take(grapheme_idx)
-            .map(|fragment| fragment.width())
+            .map(TextFragment::width)
             .sum()
     }
     pub fn col_width(&self) -> usize {
