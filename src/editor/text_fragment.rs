@@ -8,6 +8,11 @@ pub struct TextFragment {
     replacement: Option<String>,
 }
 
+const NBSP: &str = "\u{00a0}";
+const NNBSP: &str = "\u{202f}";
+const REPLACE_NBSP: &str = "␣";
+const REPLACE_NNBSP: &str = "␣";
+
 const TAB_WIDTH: usize = 4;
 
 impl TextFragment {
@@ -42,7 +47,8 @@ impl TextFragment {
         match grapheme {
             " " => None,
             "\t" => Some(format!("→{}", " ".repeat(g_width - 1)).to_string()),
-            _ if g_width > 0 && grapheme.trim().is_empty() => Some("␣".to_string()),
+            NBSP => Some(REPLACE_NBSP.to_string()),
+            NNBSP => Some(REPLACE_NNBSP.to_string()),
             _ if g_width == 0 => Some("·".to_string()),
             _ => {
                 let mut chars = grapheme.chars();
