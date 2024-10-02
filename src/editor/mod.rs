@@ -99,7 +99,7 @@ impl Editor {
         match code {
             Char('q') if modifiers == KeyModifiers::NONE => self.should_quit = true,
 
-            Down | Up if modifiers == KeyModifiers::SHIFT => {
+            Left | Down | Right | Up if modifiers == KeyModifiers::SHIFT => {
                 self.scroll_screen(code);
             }
             PageDown | PageUp => {
@@ -208,8 +208,8 @@ impl Editor {
     fn scroll_screen(&mut self, code: KeyCode) {
         let saved_offset = self.render_offset;
         match code {
-            // Left => self.scroll_left(1),
-            // Right => self.scroll_right(1),
+            Left => self.scroll_left(),
+            Right => self.scroll_right(),
             Up => self.scroll_up(1),
             Down => self.scroll_down(1),
             PageUp => self.scroll_up(self.size.height),
@@ -217,6 +217,18 @@ impl Editor {
             _ => (),
         };
         self.needs_redraw = self.render_offset != saved_offset;
+    }
+    fn scroll_left(&mut self) {
+        self.move_prev_grapheme_nowrap();
+        self.render_offset.col = self.render_offset.col.saturating_sub(1);
+    }
+    fn scroll_right(&mut self) {
+        self.move_next_grapheme_nowrap();
+        self.render_offset.col = min(
+            self.render_offset.col.saturating_add(1),
+            self.get_current_line_col_width()
+                .saturating_sub(self.size.width),
+        );
     }
     fn scroll_up(&mut self, step: usize) {
         let off_r = self.render_offset.row;
@@ -280,6 +292,15 @@ impl Editor {
             self.move_next_line(1);
             self.position.col = 0;
         }
+    }
+    fn move_prev_grapheme_nowrap(&mut self) {
+        self.position.col = self.position.col.saturating_sub(1);
+    }
+    fn move_next_grapheme_nowrap(&mut self) {
+        self.position.col = min(
+            self.position.col.saturating_add(1),
+            self.get_current_line_col_width(),
+        );
     }
     fn move_prev_line(&mut self, step: usize) {
         if self.position.row > 0 {
@@ -480,7 +501,7 @@ mod tests {
     fn test_scroll() {
         let mut editor = Editor::default();
         editor.size = Size::new(2, 2);
-        editor.lines = Editor::gen_lines("this\nis\ntest.\n");
+        editor.lines = Editor::gen_lines("abc\nis\ntest.\n");
         editor.scroll_screen(Down);
         assert_eq!(editor.caret_screen_position(), Position::new(0, 0));
         assert_eq!(editor.render_offset, Position::new(0, 1));
@@ -500,5 +521,27 @@ mod tests {
         assert_eq!(editor.caret_screen_position(), Position::new(0, 0));
         assert_eq!(editor.render_offset, Position::new(0, 0));
         assert_eq!(editor.needs_redraw, false);
+        editor.needs_redraw = false;
+
+        editor.scroll_screen(Right);
+        assert_eq!(editor.caret_screen_position(), Position::new(0, 0));
+        assert_eq!(editor.render_offset, Position::new(1, 0));
+        assert_eq!(editor.needs_redraw, true);
+        editor.needs_redraw = false;
+        editor.scroll_screen(Right);
+        assert_eq!(editor.caret_screen_position(), Position::new(1, 0));
+        assert_eq!(editor.render_offset, Position::new(1, 0));
+        assert_eq!(editor.needs_redraw, false);
+        editor.needs_redraw = false;
+        editor.scroll_screen(Left);
+        assert_eq!(editor.caret_screen_position(), Position::new(1, 0));
+        assert_eq!(editor.render_offset, Position::new(0, 0));
+        assert_eq!(editor.needs_redraw, true);
+        editor.needs_redraw = false;
+        editor.scroll_screen(Left);
+        assert_eq!(editor.caret_screen_position(), Position::new(0, 0));
+        assert_eq!(editor.render_offset, Position::new(0, 0));
+        assert_eq!(editor.needs_redraw, false);
+        editor.needs_redraw = false;
     }
 }
