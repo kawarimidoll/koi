@@ -227,6 +227,7 @@ impl Editor {
         self.render_offset.col = min(
             self.render_offset.col.saturating_add(1),
             self.get_current_line_col_width()
+                .saturating_add(1)
                 .saturating_sub(self.size.width),
         );
     }
@@ -240,7 +241,9 @@ impl Editor {
         self.move_next_line(step);
         self.render_offset.row = min(
             off_r.saturating_add(step),
-            self.get_lines_count().saturating_sub(self.size.height),
+            self.get_lines_count()
+                .saturating_add(1)
+                .saturating_sub(self.size.height),
         );
     }
     fn move_position(&mut self, code: KeyCode) {
@@ -501,7 +504,7 @@ mod tests {
     fn test_scroll() {
         let mut editor = Editor::default();
         editor.size = Size::new(2, 2);
-        editor.lines = Editor::gen_lines("abc\nis\ntest.\n");
+        editor.lines = Editor::gen_lines("ab\ncd\n");
         editor.scroll_screen(Down);
         assert_eq!(editor.caret_screen_position(), Position::new(0, 0));
         assert_eq!(editor.render_offset, Position::new(0, 1));
