@@ -99,7 +99,13 @@ impl Editor {
         match code {
             Char('q') if modifiers == KeyModifiers::NONE => self.should_quit = true,
 
-            Left | Down | Right | Up | Home | End | PageDown | PageUp => {
+            Down | Up if modifiers == KeyModifiers::SHIFT => {
+                self.scroll_screen(code);
+            }
+            PageDown | PageUp => {
+                self.scroll_screen(code);
+            }
+            Left | Down | Right | Up | Home | End => {
                 self.move_position(code);
             }
             _ => (),
@@ -199,15 +205,32 @@ impl Editor {
             row: min(self.position.row, self.get_lines_count()),
         }
     }
-    // fn scroll_screen(&mut self, code: KeyCode) {
-    //     match code {
-    //         Left => self.scroll_left(1),
-    //         Right => self.scroll_right(1),
-    //         Up => self.scroll_up(1),
-    //         Down => self.scroll_down(1),
-    //         _ => (),
-    //     };
-    // }
+    fn scroll_screen(&mut self, code: KeyCode) {
+        let saved_offset = self.render_offset;
+        match code {
+            // Left => self.scroll_left(1),
+            // Right => self.scroll_right(1),
+            Up => self.scroll_up(1),
+            Down => self.scroll_down(1),
+            PageUp => self.scroll_up(self.size.height),
+            PageDown => self.scroll_down(self.size.height),
+            _ => (),
+        };
+        self.needs_redraw = self.render_offset != saved_offset;
+    }
+    fn scroll_up(&mut self, step: usize) {
+        let off_r = self.render_offset.row;
+        self.move_prev_line(step);
+        self.render_offset.row = off_r.saturating_sub(step);
+    }
+    fn scroll_down(&mut self, step: usize) {
+        let off_r = self.render_offset.row;
+        self.move_next_line(step);
+        self.render_offset.row = min(
+            off_r.saturating_add(step),
+            self.get_lines_count().saturating_sub(self.size.height),
+        );
+    }
     fn move_position(&mut self, code: KeyCode) {
         match code {
             Left => self.move_prev_grapheme(),
@@ -216,21 +239,6 @@ impl Editor {
             Down => self.move_next_line(1),
             Home => self.position.col = 0,
             End => self.position.col = usize::MAX,
-            PageUp => {
-                let off_r = self.render_offset.row;
-                self.move_prev_line(self.size.height);
-                self.render_offset.row = off_r.saturating_sub(self.size.height);
-                self.needs_redraw = true;
-            }
-            PageDown => {
-                let off_r = self.render_offset.row;
-                self.move_next_line(self.size.height);
-                self.render_offset.row = min(
-                    off_r.saturating_add(self.size.height),
-                    self.get_lines_count().saturating_sub(self.size.height),
-                );
-                self.needs_redraw = true;
-            }
             _ => (),
         };
         self.scroll_into_view();
@@ -466,5 +474,31 @@ mod tests {
         assert_eq!(editor.caret_screen_position(), Position::new(1, 2));
         editor.move_position(Down);
         assert_eq!(editor.caret_screen_position(), Position::new(0, 3));
+    }
+
+    #[test]
+    fn test_scroll() {
+        let mut editor = Editor::default();
+        editor.size = Size::new(2, 2);
+        editor.lines = Editor::gen_lines("this\nis\ntest.\n");
+        editor.scroll_screen(Down);
+        assert_eq!(editor.caret_screen_position(), Position::new(0, 0));
+        assert_eq!(editor.render_offset, Position::new(0, 1));
+        assert_eq!(editor.needs_redraw, true);
+        editor.needs_redraw = false;
+        editor.scroll_screen(Down);
+        assert_eq!(editor.caret_screen_position(), Position::new(0, 1));
+        assert_eq!(editor.render_offset, Position::new(0, 1));
+        assert_eq!(editor.needs_redraw, false);
+        editor.needs_redraw = false;
+        editor.scroll_screen(Up);
+        assert_eq!(editor.caret_screen_position(), Position::new(0, 1));
+        assert_eq!(editor.render_offset, Position::new(0, 0));
+        assert_eq!(editor.needs_redraw, true);
+        editor.needs_redraw = false;
+        editor.scroll_screen(Up);
+        assert_eq!(editor.caret_screen_position(), Position::new(0, 0));
+        assert_eq!(editor.render_offset, Position::new(0, 0));
+        assert_eq!(editor.needs_redraw, false);
     }
 }
