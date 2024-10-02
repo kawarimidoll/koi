@@ -180,11 +180,11 @@ impl Editor {
         Terminal::move_caret_to(self.caret_screen_position()).unwrap();
     }
     fn caret_screen_position(&self) -> Position {
-        self.caret_snap_on_line()
+        self.caret_snap_on_line(&self.lines)
             .saturating_sub(&self.render_offset)
     }
-    fn caret_snap_on_line(&self) -> Position {
-        let col = if let Some(line) = self.lines.get(self.position.row) {
+    fn caret_snap_on_line(&self, lines: &[Line]) -> Position {
+        let col = if let Some(line) = lines.get(self.position.row) {
             if let Some(fragment) = line.get_fragment_by_col_idx(self.position.col) {
                 fragment.left_col_width
             } else {
@@ -244,17 +244,17 @@ impl Editor {
     #[allow(clippy::arithmetic_side_effects)]
     // allow this because check boundary condition by myself
     fn move_prev_grapheme(&mut self) {
-        self.position.col = self.caret_snap_on_line().col;
+        self.position.col = self.caret_snap_on_line(&self.lines).col;
         if self.position.col > 0 {
             self.position.col -= 1;
-            self.position.col = self.caret_snap_on_line().col;
+            self.position.col = self.caret_snap_on_line(&self.lines).col;
         } else if self.position.row > 0 {
             self.move_prev_line(1);
             self.position.col = self.get_current_line_col_width();
         }
     }
     fn move_next_grapheme(&mut self) {
-        self.position.col = self.caret_snap_on_line().col;
+        self.position.col = self.caret_snap_on_line(&self.lines).col;
 
         let step = if let Some(line) = self.lines.get(self.position.row) {
             if let Some(fragment) = line.get_fragment_by_col_idx(self.position.col) {
@@ -287,7 +287,7 @@ impl Editor {
         }
     }
     fn scroll_into_view(&mut self) {
-        let Position { col, row } = self.caret_snap_on_line();
+        let Position { col, row } = self.caret_snap_on_line(&self.lines);
         let Size { width, height } = self.size;
         // horizontal
         if col < self.render_offset.col {
