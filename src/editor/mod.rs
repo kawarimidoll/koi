@@ -12,7 +12,7 @@ use line::Line;
 mod line;
 mod text_fragment;
 
-// TODO 日本語が含まれる場合の画面端の処理
+// TODO tabが含まれる場合の画面端の処理
 // TODO 1行・1列ずつのスクロール
 
 #[derive(Default)]
