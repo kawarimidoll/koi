@@ -72,16 +72,14 @@ impl Editor {
             code, modifiers, ..
         } = event;
 
-        match code {
-            Char('q') if modifiers == KeyModifiers::NONE => self.should_quit = true,
+        match (code, modifiers) {
+            (Char('q'), KeyModifiers::NONE) => self.should_quit = true,
 
-            Left | Down | Right | Up if modifiers == KeyModifiers::SHIFT => {
+            (Left | Down | Right | Up, KeyModifiers::SHIFT)
+            | (PageDown | PageUp, KeyModifiers::NONE) => {
                 self.buffer.scroll_screen(self.size, code);
             }
-            PageDown | PageUp => {
-                self.buffer.scroll_screen(self.size, code);
-            }
-            Left | Down | Right | Up | Home | End => {
+            (Left | Down | Right | Up | Home | End, KeyModifiers::NONE) => {
                 self.buffer.move_position(self.size, code);
             }
             _ => (),
