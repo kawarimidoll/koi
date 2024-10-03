@@ -33,6 +33,8 @@ impl TextFragment {
         }
     }
     fn get_replacement(grapheme: &str, left_col_width: usize) -> Option<String> {
+        // modulo operation is necessary in this case
+        #[allow(clippy::arithmetic_side_effects)]
         let g_width = if grapheme == "\t" {
             // special case: tab
             // left_col_width = 0: 4 - 0 % 4 = 4
