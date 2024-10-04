@@ -120,7 +120,7 @@ impl Editor {
         let height = height16 as usize;
         // let _ = Terminal::print_row(height - 1, &format!("Resize to: {width:?}, {height:?}"));
         self.size = Size { width, height };
-        self.buffer.needs_redraw = true;
+        self.buffer.ensure_redraw();
     }
     fn refresh_screen(&mut self) {
         let _ = Terminal::hide_caret();

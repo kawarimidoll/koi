@@ -9,14 +9,14 @@ pub struct Buffer {
     pub position: Position,
     pub render_offset: Position,
     pub lines: Vec<Line>,
-    pub needs_redraw: bool,
+    needs_redraw: bool,
 }
 
 impl Buffer {
     pub fn new() -> Self {
         let mut buffer = Self::default();
         buffer.handle_args();
-        buffer.needs_redraw = true;
+        buffer.ensure_redraw();
         buffer
     }
     fn handle_args(&mut self) {
@@ -34,6 +34,9 @@ impl Buffer {
     }
     fn gen_lines(src: &str) -> Vec<Line> {
         src.lines().map(Line::from).collect()
+    }
+    pub fn ensure_redraw(&mut self) {
+        self.needs_redraw = true;
     }
     pub fn render<F: Fn(usize, &str) -> Result<(), Error>>(
         &mut self,
@@ -201,18 +204,18 @@ impl Buffer {
         // horizontal
         if col < self.render_offset.col {
             self.render_offset.col = col;
-            self.needs_redraw = true;
+            self.ensure_redraw();
         } else if col >= self.render_offset.col.saturating_add(width) {
             self.render_offset.col = col.saturating_add(1).saturating_sub(width);
-            self.needs_redraw = true;
+            self.ensure_redraw();
         }
         // vertical
         if row < self.render_offset.row {
             self.render_offset.row = row;
-            self.needs_redraw = true;
+            self.ensure_redraw();
         } else if row >= self.render_offset.row.saturating_add(height) {
             self.render_offset.row = row.saturating_add(1).saturating_sub(height);
-            self.needs_redraw = true;
+            self.ensure_redraw();
         }
     }
 }
