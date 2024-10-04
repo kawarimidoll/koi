@@ -8,17 +8,23 @@ use crossterm::event::{
 use std::io::Error;
 use terminal::{Position, Size, Terminal};
 mod terminal;
-use buffer::Buffer;
+// use buffer::Buffer;
 mod buffer;
+use view::View;
 mod line;
 mod text_fragment;
+mod view;
 
 // TODO tabが含まれる場合の画面端の処理
 
+// 将来的にはEditorは複数のViewとBufferを持つ
+// それぞれのViewはBufferを参照する
+// Editorは現在どのViewにフォーカスしているかの情報を持つ
 #[derive(Default)]
 pub struct Editor {
     should_quit: bool,
-    buffer: Buffer,
+    // buffer: Buffer,
+    view: View,
     size: Size,
 }
 
@@ -31,7 +37,7 @@ impl Editor {
         }));
         Terminal::initialize()?;
         let mut editor = Self::default();
-        editor.buffer = Buffer::new();
+        editor.view = View::new();
         editor.size = Terminal::size().unwrap_or_default();
         Ok(editor)
     }
@@ -77,25 +83,25 @@ impl Editor {
 
             (Left | Down | Right | Up, KeyModifiers::SHIFT)
             | (PageDown | PageUp, KeyModifiers::NONE) => {
-                self.buffer.scroll_screen(self.size, code);
+                self.view.scroll_screen(self.size, code);
             }
             (Left | Down | Right | Up | Home | End, KeyModifiers::NONE) => {
-                self.buffer.move_position(self.size, code);
+                self.view.move_position(self.size, code);
             }
             _ => (),
         }
         let Position {
             col: doc_x,
             row: doc_y,
-        } = self.buffer.position;
-        let Position { col, row } = self.buffer.caret_screen_position();
+        } = self.view.position;
+        let Position { col, row } = self.view.caret_screen_position(&self.view.buffer.lines);
         let Position {
             col: off_c,
             row: off_r,
-        } = self.buffer.render_offset;
+        } = self.view.offset;
 
-        let info = if let Some(line) = self.buffer.lines.get(self.buffer.position.row) {
-            if let Some(fragment) = line.get_fragment_by_col_idx(self.buffer.position.col) {
+        let info = if let Some(line) = self.view.buffer.lines.get(self.view.position.row) {
+            if let Some(fragment) = line.get_fragment_by_col_idx(self.view.position.col) {
                 &format!(
                     "{}, {}, {}",
                     fragment.grapheme,
@@ -120,17 +126,20 @@ impl Editor {
         let height = height16 as usize;
         // let _ = Terminal::print_row(height - 1, &format!("Resize to: {width:?}, {height:?}"));
         self.size = Size { width, height };
-        self.buffer.ensure_redraw();
+        self.view.buffer.ensure_redraw();
     }
     fn refresh_screen(&mut self) {
         let _ = Terminal::hide_caret();
-        let _ = self.buffer.render(self.size, Terminal::print_row);
+        let _ = self
+            .view
+            .buffer
+            .render(self.size, self.view.offset, Terminal::print_row);
         self.move_caret();
         let _ = Terminal::show_caret();
         let _ = Terminal::execute();
     }
     fn move_caret(&self) {
-        Terminal::move_caret_to(self.buffer.caret_screen_position()).unwrap();
+        Terminal::move_caret_to(self.view.caret_screen_position(&self.view.buffer.lines)).unwrap();
     }
 }
 
