@@ -1,6 +1,6 @@
 use super::buffer::Buffer;
-use super::line::Line;
 use super::terminal::{Position, Size};
+use super::text_fragment::TextFragment;
 use crossterm::event::KeyCode::{self, Down, End, Home, Left, PageDown, PageUp, Right, Up};
 use std::cmp::min;
 
@@ -40,6 +40,12 @@ impl View {
             col,
             row: min(self.position.row, self.buffer.lines.len()),
         }
+    }
+    pub fn get_fragment_by_position(&self, pos: Position) -> Option<&TextFragment> {
+        self.buffer
+            .lines
+            .get(pos.row)
+            .and_then(|line| line.get_fragment_by_col_idx(pos.col))
     }
 
     pub fn scroll_screen(&mut self, size: Size, code: KeyCode) {

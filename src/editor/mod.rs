@@ -100,20 +100,18 @@ impl Editor {
             row: off_r,
         } = self.view.offset;
 
-        let info = if let Some(line) = self.view.buffer.lines.get(self.view.position.row) {
-            if let Some(fragment) = line.get_fragment_by_col_idx(self.view.position.col) {
-                &format!(
+        let info = self
+            .view
+            .get_fragment_by_position(self.view.position)
+            .map(|fragment| {
+                format!(
                     "{}, {}, {}",
                     fragment.grapheme,
                     fragment.width(),
                     fragment.left_col_width
                 )
-            } else {
-                ""
-            }
-        } else {
-            ""
-        };
+            })
+            .unwrap_or_else(|| "".to_string());
 
         let _ = Terminal::print_row(
             height.saturating_sub(1),
