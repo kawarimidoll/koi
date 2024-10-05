@@ -46,6 +46,9 @@ impl Line {
         self.fragments.len()
     }
     pub fn get_str_by_col_range(&self, range: Range<usize>) -> String {
+        if range.start == range.end {
+            return String::default();
+        }
         // Range<usize> must have start and end
         let mut acc = 0;
         let mut start = 0;
@@ -138,6 +141,7 @@ mod tests {
                 .map_or("", |f| &f.grapheme()),
             "f"
         );
+        assert_eq!(line.get_str_by_col_range(0..0), "");
         assert_eq!(line.get_str_by_col_range(2..6), "st_f");
         assert_eq!(line.get_str_by_col_range(1..5), "est_");
         line.insert(1, "ok");
