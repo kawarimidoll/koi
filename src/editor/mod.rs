@@ -43,8 +43,7 @@ impl Editor {
     }
 
     pub fn run(&mut self) {
-        let bottom_line = self.size.height.saturating_sub(1);
-        Terminal::print_row(bottom_line, "Type something. Press 'q' to quit.").unwrap();
+        self.print_bottom("Type something. Press 'q' to quit.");
         self.move_caret();
 
         loop {
@@ -58,22 +57,49 @@ impl Editor {
                     if key_event.kind == crossterm::event::KeyEventKind::Press {
                         self.handle_key_event(key_event);
                     }
+                    let Position { col, row } = self.view.caret_screen_position();
+                    let info = self
+                        .view
+                        .get_fragment_by_position(self.view.position)
+                        .map(|fragment| {
+                            format!(
+                                "{}, {}, {}",
+                                fragment
+                                    .replacement()
+                                    .unwrap_or_else(|| fragment.grapheme()),
+                                fragment.width(),
+                                fragment.left_col_width()
+                            )
+                        })
+                        .unwrap_or_default();
+                    self.print_bottom(&format!(
+                        "loc: {},{}, pos: {col},{row}, off: {},{}, [{info}]",
+                        self.view.position.col,
+                        self.view.position.row,
+                        self.view.offset.col,
+                        self.view.offset.row,
+                    ));
                 }
                 Ok(Resize(width16, height16)) => {
                     self.handle_resize_event(width16, height16);
                 }
                 Err(err) => {
-                    Terminal::print_row(bottom_line, &format!("{err}")).unwrap();
+                    self.print_bottom(&format!("{err}"));
                 }
                 _ => {
-                    Terminal::print_row(bottom_line, "Unsupported event!").unwrap();
+                    self.print_bottom("Unsupported event!");
                 }
             }
         }
     }
 
+    // for debug
+    fn print_bottom(&self, line_text: &str) {
+        let bottom_line = self.size.height.saturating_sub(1);
+        Terminal::print_row(bottom_line, line_text).unwrap();
+    }
+
     fn handle_key_event(&mut self, event: KeyEvent) {
-        let height = self.size.height;
         let KeyEvent {
             code, modifiers, ..
         } = event;
@@ -90,35 +116,6 @@ impl Editor {
             }
             _ => (),
         }
-        let Position {
-            col: doc_x,
-            row: doc_y,
-        } = self.view.position;
-        let Position { col, row } = self.view.caret_screen_position();
-        let Position {
-            col: off_c,
-            row: off_r,
-        } = self.view.offset;
-
-        let info = self
-            .view
-            .get_fragment_by_position(self.view.position)
-            .map(|fragment| {
-                format!(
-                    "{}, {}, {}",
-                    fragment
-                        .replacement()
-                        .unwrap_or_else(|| fragment.grapheme()),
-                    fragment.width(),
-                    fragment.left_col_width()
-                )
-            })
-            .unwrap_or_default();
-
-        let _ = Terminal::print_row(
-            height.saturating_sub(1),
-            &format!("loc: {doc_x},{doc_y}, pos: {col},{row}, off: {off_c},{off_r}, [{info}]"),
-        );
     }
     #[allow(clippy::as_conversions)]
     fn handle_resize_event(&mut self, width16: u16, height16: u16) {
