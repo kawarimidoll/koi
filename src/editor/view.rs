@@ -48,6 +48,14 @@ impl View {
             .and_then(|line| line.get_fragment_by_col_idx(pos.col))
     }
 
+    // TODO: support string
+    pub fn insert_char(&mut self, size: Size, c: char) {
+        if self.buffer.insert(&c.to_string(), self.position) {
+            self.ensure_redraw();
+            self.move_position(size, Right);
+        }
+    }
+
     pub fn scroll_screen(&mut self, size: Size, code: KeyCode) {
         let saved_offset = self.offset;
         match code {
@@ -364,5 +372,16 @@ mod tests {
         assert_eq!(view.offset, Position::new(0, 0));
         assert_eq!(view.buffer.needs_redraw, false);
         view.buffer.needs_redraw = false;
+    }
+
+    #[test]
+    fn test_insert_char() {
+        let mut view = View::default();
+        let size = Size::new(10, 10);
+        view.buffer.lines = Buffer::gen_lines("this\nis\ntest.\n");
+        view.position = Position { col: 1, row: 0 };
+        view.insert_char(size, 'o');
+        assert_eq!(view.buffer.lines[0].content(), "tohis");
+        assert_eq!(view.position, Position { col: 2, row: 0 });
     }
 }
