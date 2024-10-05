@@ -2,7 +2,7 @@
 use crossterm::event::{
     read,
     Event::{Key, Resize},
-    KeyCode::{Char, Down, End, Home, Left, PageDown, PageUp, Right, Up},
+    KeyCode::{Char, Down, End, Esc, Home, Left, PageDown, PageUp, Right, Up},
     KeyEvent, KeyModifiers,
 };
 use std::io::Error;
@@ -101,6 +101,11 @@ impl Editor {
 
         match (code, modifiers) {
             (Char('q'), KeyModifiers::NONE) => self.should_quit = true,
+            (Char('i'), KeyModifiers::NONE) => self.insert_loop(),
+            (Char('a'), KeyModifiers::NONE) => {
+                self.view.move_position(self.size, Right);
+                self.insert_loop();
+            }
 
             (Left | Down | Right | Up, KeyModifiers::SHIFT)
             | (PageDown | PageUp, KeyModifiers::NONE) => {
@@ -137,6 +142,30 @@ impl Editor {
     }
     fn move_caret(&self) {
         Terminal::move_caret_to(self.view.caret_screen_position()).unwrap();
+    }
+
+    // NOTE: easy version
+    fn insert_loop(&mut self) {
+        self.print_bottom("[ insert ]");
+        loop {
+            self.refresh_screen();
+            if let Ok(Key(KeyEvent {
+                code,
+                modifiers,
+                kind: crossterm::event::KeyEventKind::Press,
+                ..
+            })) = read()
+            {
+                match (code, modifiers) {
+                    (Esc, _) => break,
+                    (Char(c), KeyModifiers::NONE | KeyModifiers::SHIFT) => {
+                        self.view.insert_char(self.size, c);
+                        self.print_bottom(&format!("[ insert ] input: {c}"));
+                    }
+                    _ => (),
+                }
+            }
+        }
     }
 }
 
