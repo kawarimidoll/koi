@@ -109,6 +109,14 @@ impl Editor {
             (Left | Down | Right | Up | Home | End, KeyModifiers::NONE) => {
                 self.view.move_position(self.size, code);
             }
+            (Char('h'), KeyModifiers::NONE) => self.view.move_position(self.size, Left),
+            (Char('H'), KeyModifiers::SHIFT) => self.view.move_position(self.size, Home),
+            (Char('j'), KeyModifiers::NONE) => self.view.move_position(self.size, Down),
+            (Char('k'), KeyModifiers::NONE) => self.view.move_position(self.size, Up),
+            (Char('l'), KeyModifiers::NONE) => self.view.move_position(self.size, Right),
+            (Char('L'), KeyModifiers::SHIFT) => self.view.move_position(self.size, End),
+            (Char('f'), KeyModifiers::CONTROL) => self.view.scroll_screen(self.size, PageDown),
+            (Char('b'), KeyModifiers::CONTROL) => self.view.scroll_screen(self.size, PageUp),
             _ => (),
         }
     }
