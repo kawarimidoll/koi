@@ -1,3 +1,4 @@
+pub use crossterm::cursor::SetCursorStyle as CursorStyle;
 use crossterm::cursor::{Hide, MoveTo, Show};
 use crossterm::style::Print;
 use crossterm::terminal::{
@@ -56,6 +57,7 @@ impl Terminal {
         Self::leave_alternate_screen()?;
         Self::enable_line_wrap()?;
         Self::show_caret()?;
+        Self::set_cursor_style(CursorStyle::DefaultUserShape)?;
         Self::execute()?;
         disable_raw_mode()
     }
@@ -70,6 +72,9 @@ impl Terminal {
     }
     fn disable_line_wrap() -> Result<(), Error> {
         Self::queue_command(DisableLineWrap)
+    }
+    pub fn set_cursor_style(style: CursorStyle) -> Result<(), Error> {
+        Self::queue_command(style)
     }
     pub fn clear_screen() -> Result<(), Error> {
         Self::queue_command(Clear(ClearType::All))

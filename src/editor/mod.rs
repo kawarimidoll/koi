@@ -6,7 +6,7 @@ use crossterm::event::{
     KeyEvent, KeyModifiers,
 };
 use std::io::Error;
-use terminal::{Position, Size, Terminal};
+use terminal::{CursorStyle, Size, Terminal};
 mod terminal;
 // use buffer::Buffer;
 mod buffer;
@@ -146,6 +146,7 @@ impl Editor {
 
     // NOTE: easy version
     fn insert_loop(&mut self) {
+        Terminal::set_cursor_style(CursorStyle::SteadyBar).unwrap();
         self.print_bottom("[ insert ]");
         loop {
             self.refresh_screen();
@@ -166,6 +167,7 @@ impl Editor {
                 }
             }
         }
+        Terminal::set_cursor_style(CursorStyle::DefaultUserShape).unwrap();
     }
 }
 
