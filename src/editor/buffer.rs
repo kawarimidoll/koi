@@ -68,6 +68,30 @@ impl Buffer {
     pub fn get_lines_count(&self) -> usize {
         self.lines.len()
     }
+
+    pub fn insert(&mut self, str: &str, at: Position) -> bool {
+        let Position { col, row } = at;
+
+        // out of bounds
+        if row > self.get_lines_count() {
+            return false;
+        }
+
+        // append a new line
+        if row == self.get_lines_count() {
+            self.lines.push(Line::from(str));
+            return true;
+        }
+
+        // insert a new character in an existing line
+        if let Some(line) = self.lines.get_mut(row) {
+            line.insert(col, str);
+            return true;
+        }
+
+        // maybe dead code, but the compiler doesn't know that
+        false
+    }
 }
 
 #[cfg(test)]
@@ -83,5 +107,13 @@ mod tests {
         assert_eq!(lines[0].content(), "# this is test file for load");
         assert_eq!(lines[1].content(), "");
         assert_eq!(lines[2].content(), "this is sample text");
+    }
+
+    #[test]
+    fn test_insert() {
+        let mut buffer = Buffer::default();
+        buffer.lines = Buffer::gen_lines("this\nis\ntest.\n");
+        buffer.insert("ok", Position { col: 1, row: 0 });
+        assert_eq!(buffer.lines[0].content(), "tokhis");
     }
 }
