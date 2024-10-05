@@ -2,7 +2,7 @@
 use crossterm::event::{
     read,
     Event::{Key, Resize},
-    KeyCode::{Char, Down, End, Esc, Home, Left, PageDown, PageUp, Right, Up},
+    KeyCode::{self, Char, Down, End, Esc, Home, Left, PageDown, PageUp, Right, Up},
     KeyEvent, KeyModifiers,
 };
 use std::io::Error;
@@ -52,13 +52,16 @@ impl Editor {
                 break;
             }
             match read() {
-                Ok(Key(key_event)) => {
+                Ok(Key(KeyEvent {
+                    code,
+                    modifiers,
                     // necessary for windows
-                    if key_event.kind == crossterm::event::KeyEventKind::Press {
-                        self.handle_key_event(key_event);
-                    }
+                    kind: crossterm::event::KeyEventKind::Press,
+                    ..
+                })) => {
+                    self.handle_key_event(code, modifiers);
                     self.print_bottom(&format!(
-                        "loc: {}, pos: {}, off: {}, [{}]",
+                        "loc: {}, pos: {}, off: {}, [{}], key: {}",
                         self.view.position,
                         self.view.caret_screen_position(),
                         self.view.offset,
@@ -72,7 +75,8 @@ impl Editor {
                                     fragment.left_col_width()
                                 )
                             })
-                            .unwrap_or_default()
+                            .unwrap_or_default(),
+                        code,
                     ));
                 }
                 Ok(Resize(width16, height16)) => {
@@ -94,11 +98,7 @@ impl Editor {
         Terminal::print_row(bottom_line, line_text).unwrap();
     }
 
-    fn handle_key_event(&mut self, event: KeyEvent) {
-        let KeyEvent {
-            code, modifiers, ..
-        } = event;
-
+    fn handle_key_event(&mut self, code: KeyCode, modifiers: KeyModifiers) {
         match (code, modifiers) {
             (Char('q'), KeyModifiers::NONE) => self.should_quit = true,
             (Char('i'), KeyModifiers::NONE) => self.insert_loop(),
