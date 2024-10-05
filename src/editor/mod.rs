@@ -111,7 +111,7 @@ impl Editor {
                     fragment.left_col_width
                 )
             })
-            .unwrap_or_else(|| "".to_string());
+            .unwrap_or_default();
 
         let _ = Terminal::print_row(
             height.saturating_sub(1),
@@ -124,14 +124,11 @@ impl Editor {
         let height = height16 as usize;
         // let _ = Terminal::print_row(height - 1, &format!("Resize to: {width:?}, {height:?}"));
         self.size = Size { width, height };
-        self.view.buffer.ensure_redraw();
+        self.view.ensure_redraw();
     }
     fn refresh_screen(&mut self) {
         let _ = Terminal::hide_caret();
-        let _ = self
-            .view
-            .buffer
-            .render(self.size, self.view.offset, Terminal::print_row);
+        let _ = self.view.render(self.size);
         self.move_caret();
         let _ = Terminal::show_caret();
         let _ = Terminal::execute();

@@ -1,8 +1,8 @@
 use super::buffer::Buffer;
-use super::terminal::{Position, Size};
+use super::terminal::{Position, Size, Terminal};
 use super::text_fragment::TextFragment;
 use crossterm::event::KeyCode::{self, Down, End, Home, Left, PageDown, PageUp, Right, Up};
-use std::cmp::min;
+use std::{cmp::min, io::Error};
 
 #[derive(Default)]
 pub struct View {
@@ -176,6 +176,13 @@ impl View {
             self.offset.row = row.saturating_add(1).saturating_sub(height);
             self.buffer.ensure_redraw();
         }
+    }
+    pub fn ensure_redraw(&mut self) {
+        self.buffer.needs_redraw = true;
+    }
+    pub fn render(&mut self, screen_size: Size) -> Result<(), Error> {
+        self.buffer
+            .render(screen_size, self.offset, Terminal::print_row)
     }
 }
 
