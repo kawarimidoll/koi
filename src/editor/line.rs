@@ -104,6 +104,17 @@ impl Line {
     pub fn col_width(&self) -> usize {
         self.col_width
     }
+    pub fn insert(&mut self, at_col_idx: usize, string: &str) {
+        if at_col_idx < self.col_width {
+            let substr = self.get_str_by_col_range(0..at_col_idx);
+            self.string.insert_str(substr.len(), string);
+        } else {
+            self.string.push_str(string);
+        }
+        let (fragments, col_width) = Self::string_to_fragments(&self.string);
+        self.fragments = fragments;
+        self.col_width = col_width;
+    }
 }
 
 #[cfg(test)]
@@ -111,8 +122,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_from() {
-        let line = Line::from("test_from");
+    fn test_line() {
+        let mut line = Line::from("test_from");
         assert_eq!(line.content(), "test_from");
         assert_eq!(line.grapheme_count(), 9);
         assert_eq!(line.col_width(), 9);
@@ -127,11 +138,14 @@ mod tests {
                 .map_or("", |f| &f.grapheme()),
             "f"
         );
-
         assert_eq!(line.get_str_by_col_range(2..6), "st_f");
         assert_eq!(line.get_str_by_col_range(1..5), "est_");
+        line.insert(1, "ok");
+        assert_eq!(line.content(), "tokest_from");
+        assert_eq!(line.grapheme_count(), 11);
+        assert_eq!(line.col_width(), 11);
 
-        let line = Line::from("こんにちは");
+        let mut line = Line::from("こんにちは");
         assert_eq!(line.content(), "こんにちは");
         assert_eq!(line.grapheme_count(), 5);
         assert_eq!(line.col_width(), 10);
@@ -148,5 +162,9 @@ mod tests {
         );
         assert_eq!(line.get_str_by_col_range(2..6), "んに");
         assert_eq!(line.get_str_by_col_range(1..5), "«ん»");
+        line.insert(2, "ok");
+        assert_eq!(line.content(), "こokんにちは");
+        assert_eq!(line.grapheme_count(), 7);
+        assert_eq!(line.col_width(), 12);
     }
 }
