@@ -2,9 +2,9 @@ use std::fmt;
 use unicode_width::UnicodeWidthStr;
 
 pub struct TextFragment {
-    pub grapheme: String,
+    grapheme: String,
     width: usize,
-    pub left_col_width: usize,
+    left_col_width: usize,
     replacement: Option<String>,
 }
 
@@ -65,8 +65,17 @@ impl TextFragment {
             }
         }
     }
+    pub fn grapheme(&self) -> &str {
+        &self.grapheme
+    }
     pub fn width(&self) -> usize {
         self.width
+    }
+    pub fn left_col_width(&self) -> usize {
+        self.left_col_width
+    }
+    pub fn replacement(&self) -> Option<&str> {
+        self.replacement.as_deref()
     }
 }
 

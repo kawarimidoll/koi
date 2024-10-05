@@ -28,7 +28,7 @@ impl View {
     fn caret_snap_on_line(&self) -> Position {
         let col = if let Some(line) = self.buffer.lines.get(self.position.row) {
             if let Some(fragment) = line.get_fragment_by_col_idx(self.position.col) {
-                fragment.left_col_width
+                fragment.left_col_width()
             } else {
                 line.col_width()
             }

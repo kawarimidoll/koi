@@ -118,11 +118,13 @@ mod tests {
         assert_eq!(line.col_width(), 9);
         assert_eq!(line.grapheme_idx_to_col_idx(5), 5);
         assert_eq!(
-            line.get_fragment_by_col_idx(4).map_or("", |f| &f.grapheme),
+            line.get_fragment_by_col_idx(4)
+                .map_or("", |f| &f.grapheme()),
             "_"
         );
         assert_eq!(
-            line.get_fragment_by_col_idx(5).map_or("", |f| &f.grapheme),
+            line.get_fragment_by_col_idx(5)
+                .map_or("", |f| &f.grapheme()),
             "f"
         );
 
@@ -135,11 +137,13 @@ mod tests {
         assert_eq!(line.col_width(), 10);
         assert_eq!(line.grapheme_idx_to_col_idx(2), 4);
         assert_eq!(
-            line.get_fragment_by_col_idx(4).map_or("", |f| &f.grapheme),
+            line.get_fragment_by_col_idx(4)
+                .map_or("", |f| &f.grapheme()),
             "に"
         );
         assert_eq!(
-            line.get_fragment_by_col_idx(5).map_or("", |f| &f.grapheme),
+            line.get_fragment_by_col_idx(5)
+                .map_or("", |f| &f.grapheme()),
             "に"
         );
         assert_eq!(line.get_str_by_col_range(2..6), "んに");

@@ -106,9 +106,11 @@ impl Editor {
             .map(|fragment| {
                 format!(
                     "{}, {}, {}",
-                    fragment.grapheme,
+                    fragment
+                        .replacement()
+                        .unwrap_or_else(|| fragment.grapheme()),
                     fragment.width(),
-                    fragment.left_col_width
+                    fragment.left_col_width()
                 )
             })
             .unwrap_or_default();
