@@ -94,7 +94,7 @@ impl Editor {
             col: doc_x,
             row: doc_y,
         } = self.view.position;
-        let Position { col, row } = self.view.caret_screen_position(&self.view.buffer.lines);
+        let Position { col, row } = self.view.caret_screen_position();
         let Position {
             col: off_c,
             row: off_r,
@@ -139,7 +139,7 @@ impl Editor {
         let _ = Terminal::execute();
     }
     fn move_caret(&self) {
-        Terminal::move_caret_to(self.view.caret_screen_position(&self.view.buffer.lines)).unwrap();
+        Terminal::move_caret_to(self.view.caret_screen_position()).unwrap();
     }
 }
 

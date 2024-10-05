@@ -22,11 +22,11 @@ impl View {
             ..Self::default()
         }
     }
-    pub fn caret_screen_position(&self, lines: &[Line]) -> Position {
-        self.caret_snap_on_line(lines).saturating_sub(&self.offset)
+    pub fn caret_screen_position(&self) -> Position {
+        self.caret_snap_on_line().saturating_sub(&self.offset)
     }
-    fn caret_snap_on_line(&self, lines: &[Line]) -> Position {
-        let col = if let Some(line) = lines.get(self.position.row) {
+    fn caret_snap_on_line(&self) -> Position {
+        let col = if let Some(line) = self.buffer.lines.get(self.position.row) {
             if let Some(fragment) = line.get_fragment_by_col_idx(self.position.col) {
                 fragment.left_col_width
             } else {
@@ -38,7 +38,7 @@ impl View {
 
         Position {
             col,
-            row: min(self.position.row, lines.len()),
+            row: min(self.position.row, self.buffer.lines.len()),
         }
     }
 
@@ -100,17 +100,17 @@ impl View {
     #[allow(clippy::arithmetic_side_effects)]
     // allow this because boundary condition is confirmed by myself
     fn move_prev_grapheme(&mut self) {
-        self.position.col = self.caret_snap_on_line(&self.buffer.lines).col;
+        self.position.col = self.caret_snap_on_line().col;
         if self.position.col > 0 {
             self.position.col -= 1;
-            self.position.col = self.caret_snap_on_line(&self.buffer.lines).col;
+            self.position.col = self.caret_snap_on_line().col;
         } else if self.position.row > 0 {
             self.move_prev_line(1);
             self.position.col = self.buffer.get_line_col_width(self.position.row);
         }
     }
     fn move_next_grapheme(&mut self) {
-        self.position.col = self.caret_snap_on_line(&self.buffer.lines).col;
+        self.position.col = self.caret_snap_on_line().col;
 
         let step = if let Some(line) = self.buffer.lines.get(self.position.row) {
             if let Some(fragment) = line.get_fragment_by_col_idx(self.position.col) {
@@ -152,7 +152,7 @@ impl View {
         }
     }
     fn scroll_into_view(&mut self, size: Size) {
-        let Position { col, row } = self.caret_snap_on_line(&self.buffer.lines);
+        let Position { col, row } = self.caret_snap_on_line();
         let Size { width, height } = size;
         // horizontal
         if col < self.offset.col {
@@ -185,35 +185,35 @@ mod tests {
         view.buffer.lines = Buffer::gen_lines("a\nb\n");
         view.position = Position::new(1, 1);
         view.move_position(size, Left);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(0, 1)); // wrap
+        assert_eq!(view.caret_screen_position(), Position::new(0, 1)); // wrap
         view.move_position(size, Left);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(1, 0));
+        assert_eq!(view.caret_screen_position(), Position::new(1, 0));
         view.move_position(size, Left);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(0, 0));
+        assert_eq!(view.caret_screen_position(), Position::new(0, 0));
         view.move_position(size, Left);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(0, 0)); // boundary
+        assert_eq!(view.caret_screen_position(), Position::new(0, 0)); // boundary
 
         // test for full-width character
         view.buffer.lines = Buffer::gen_lines("aあbい\nうcえd\n");
         view.position = Position::new(6, 1);
         view.move_position(size, Left);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(5, 1));
+        assert_eq!(view.caret_screen_position(), Position::new(5, 1));
         view.move_position(size, Left);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(3, 1));
+        assert_eq!(view.caret_screen_position(), Position::new(3, 1));
         view.move_position(size, Left);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(2, 1));
+        assert_eq!(view.caret_screen_position(), Position::new(2, 1));
         view.move_position(size, Left);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(0, 1));
+        assert_eq!(view.caret_screen_position(), Position::new(0, 1));
         view.move_position(size, Left);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(6, 0));
+        assert_eq!(view.caret_screen_position(), Position::new(6, 0));
         view.move_position(size, Left);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(4, 0));
+        assert_eq!(view.caret_screen_position(), Position::new(4, 0));
         view.move_position(size, Left);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(3, 0));
+        assert_eq!(view.caret_screen_position(), Position::new(3, 0));
         view.move_position(size, Left);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(1, 0));
+        assert_eq!(view.caret_screen_position(), Position::new(1, 0));
         view.move_position(size, Left);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(0, 0));
+        assert_eq!(view.caret_screen_position(), Position::new(0, 0));
     }
 
     #[test]
@@ -222,37 +222,37 @@ mod tests {
         let size = Size::new(10, 10);
         view.buffer.lines = Buffer::gen_lines("a\nb\n");
         view.move_position(size, Right);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(1, 0));
+        assert_eq!(view.caret_screen_position(), Position::new(1, 0));
         view.move_position(size, Right);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(0, 1));
+        assert_eq!(view.caret_screen_position(), Position::new(0, 1));
         view.move_position(size, Right);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(1, 1)); // wrap
+        assert_eq!(view.caret_screen_position(), Position::new(1, 1)); // wrap
         view.move_position(size, Right);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(0, 2));
+        assert_eq!(view.caret_screen_position(), Position::new(0, 2));
         view.move_position(size, Right);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(0, 2)); // boundary
+        assert_eq!(view.caret_screen_position(), Position::new(0, 2)); // boundary
 
         // test for full-width character
         view.buffer.lines = Buffer::gen_lines("aあbい\nうcえd\n");
         view.position = Position::default();
         view.move_position(size, Right);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(1, 0));
+        assert_eq!(view.caret_screen_position(), Position::new(1, 0));
         view.move_position(size, Right);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(3, 0));
+        assert_eq!(view.caret_screen_position(), Position::new(3, 0));
         view.move_position(size, Right);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(4, 0));
+        assert_eq!(view.caret_screen_position(), Position::new(4, 0));
         view.move_position(size, Right);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(6, 0));
+        assert_eq!(view.caret_screen_position(), Position::new(6, 0));
         view.move_position(size, Right);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(0, 1));
+        assert_eq!(view.caret_screen_position(), Position::new(0, 1));
         view.move_position(size, Right);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(2, 1));
+        assert_eq!(view.caret_screen_position(), Position::new(2, 1));
         view.move_position(size, Right);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(3, 1));
+        assert_eq!(view.caret_screen_position(), Position::new(3, 1));
         view.move_position(size, Right);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(5, 1));
+        assert_eq!(view.caret_screen_position(), Position::new(5, 1));
         view.move_position(size, Right);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(6, 1));
+        assert_eq!(view.caret_screen_position(), Position::new(6, 1));
     }
 
     #[test]
@@ -262,21 +262,21 @@ mod tests {
         view.buffer.lines = Buffer::gen_lines("this\nis\ntest.\n");
         view.position = Position::new(3, 2);
         view.move_position(size, Up);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(2, 1)); // snap
+        assert_eq!(view.caret_screen_position(), Position::new(2, 1)); // snap
         view.move_position(size, Up);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(3, 0));
+        assert_eq!(view.caret_screen_position(), Position::new(3, 0));
         view.move_position(size, Up);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(3, 0)); // boundary
+        assert_eq!(view.caret_screen_position(), Position::new(3, 0)); // boundary
 
         // test for full-width character
         view.buffer.lines = Buffer::gen_lines("aあ\nいb\ncう\nえe\n");
         view.position = Position::new(2, 3);
         view.move_position(size, Up);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(1, 2));
+        assert_eq!(view.caret_screen_position(), Position::new(1, 2));
         view.move_position(size, Up);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(2, 1));
+        assert_eq!(view.caret_screen_position(), Position::new(2, 1));
         view.move_position(size, Up);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(1, 0));
+        assert_eq!(view.caret_screen_position(), Position::new(1, 0));
     }
 
     #[test]
@@ -286,23 +286,23 @@ mod tests {
         view.buffer.lines = Buffer::gen_lines("this\nis\ntest.\n");
         view.position = Position::new(3, 0);
         view.move_position(size, Down);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(2, 1)); // snap
+        assert_eq!(view.caret_screen_position(), Position::new(2, 1)); // snap
         view.move_position(size, Down);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(3, 2));
+        assert_eq!(view.caret_screen_position(), Position::new(3, 2));
         view.move_position(size, Down);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(0, 3));
+        assert_eq!(view.caret_screen_position(), Position::new(0, 3));
         view.move_position(size, Down);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(0, 3)); // boundary
+        assert_eq!(view.caret_screen_position(), Position::new(0, 3)); // boundary
 
         // test for full-width character
         view.buffer.lines = Buffer::gen_lines("aあ\nいb\ncう\nえe\n");
         view.position = Position::new(1, 0);
         view.move_position(size, Down);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(0, 1));
+        assert_eq!(view.caret_screen_position(), Position::new(0, 1));
         view.move_position(size, Down);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(1, 2));
+        assert_eq!(view.caret_screen_position(), Position::new(1, 2));
         view.move_position(size, Down);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(0, 3));
+        assert_eq!(view.caret_screen_position(), Position::new(0, 3));
     }
 
     #[test]
@@ -311,43 +311,43 @@ mod tests {
         let size = Size::new(2, 2);
         view.buffer.lines = Buffer::gen_lines("ab\ncd\n");
         view.scroll_screen(size, Down);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(0, 0));
+        assert_eq!(view.caret_screen_position(), Position::new(0, 0));
         assert_eq!(view.offset, Position::new(0, 1));
         assert_eq!(view.buffer.needs_redraw, true);
         view.buffer.needs_redraw = false;
         view.scroll_screen(size, Down);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(0, 1));
+        assert_eq!(view.caret_screen_position(), Position::new(0, 1));
         assert_eq!(view.offset, Position::new(0, 1));
         assert_eq!(view.buffer.needs_redraw, false);
         view.buffer.needs_redraw = false;
         view.scroll_screen(size, Up);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(0, 1));
+        assert_eq!(view.caret_screen_position(), Position::new(0, 1));
         assert_eq!(view.offset, Position::new(0, 0));
         assert_eq!(view.buffer.needs_redraw, true);
         view.buffer.needs_redraw = false;
         view.scroll_screen(size, Up);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(0, 0));
+        assert_eq!(view.caret_screen_position(), Position::new(0, 0));
         assert_eq!(view.offset, Position::new(0, 0));
         assert_eq!(view.buffer.needs_redraw, false);
         view.buffer.needs_redraw = false;
 
         view.scroll_screen(size, Right);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(0, 0));
+        assert_eq!(view.caret_screen_position(), Position::new(0, 0));
         assert_eq!(view.offset, Position::new(1, 0));
         assert_eq!(view.buffer.needs_redraw, true);
         view.buffer.needs_redraw = false;
         view.scroll_screen(size, Right);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(1, 0));
+        assert_eq!(view.caret_screen_position(), Position::new(1, 0));
         assert_eq!(view.offset, Position::new(1, 0));
         assert_eq!(view.buffer.needs_redraw, false);
         view.buffer.needs_redraw = false;
         view.scroll_screen(size, Left);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(1, 0));
+        assert_eq!(view.caret_screen_position(), Position::new(1, 0));
         assert_eq!(view.offset, Position::new(0, 0));
         assert_eq!(view.buffer.needs_redraw, true);
         view.buffer.needs_redraw = false;
         view.scroll_screen(size, Left);
-        assert_eq!(view.caret_screen_position(&view.buffer.lines), Position::new(0, 0));
+        assert_eq!(view.caret_screen_position(), Position::new(0, 0));
         assert_eq!(view.offset, Position::new(0, 0));
         assert_eq!(view.buffer.needs_redraw, false);
         view.buffer.needs_redraw = false;
