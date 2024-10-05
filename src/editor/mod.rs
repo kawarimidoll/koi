@@ -57,27 +57,22 @@ impl Editor {
                     if key_event.kind == crossterm::event::KeyEventKind::Press {
                         self.handle_key_event(key_event);
                     }
-                    let Position { col, row } = self.view.caret_screen_position();
-                    let info = self
-                        .view
-                        .get_fragment_by_position(self.view.position)
-                        .map(|fragment| {
-                            format!(
-                                "{}, {}, {}",
-                                fragment
-                                    .replacement()
-                                    .unwrap_or_else(|| fragment.grapheme()),
-                                fragment.width(),
-                                fragment.left_col_width()
-                            )
-                        })
-                        .unwrap_or_default();
                     self.print_bottom(&format!(
-                        "loc: {},{}, pos: {col},{row}, off: {},{}, [{info}]",
-                        self.view.position.col,
-                        self.view.position.row,
-                        self.view.offset.col,
-                        self.view.offset.row,
+                        "loc: {}, pos: {}, off: {}, [{}]",
+                        self.view.position,
+                        self.view.caret_screen_position(),
+                        self.view.offset,
+                        self.view
+                            .get_fragment_by_position(self.view.position)
+                            .map(|fragment| {
+                                format!(
+                                    "{}, {}, {}",
+                                    fragment,
+                                    fragment.width(),
+                                    fragment.left_col_width()
+                                )
+                            })
+                            .unwrap_or_default()
                     ));
                 }
                 Ok(Resize(width16, height16)) => {

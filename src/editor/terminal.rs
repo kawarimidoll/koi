@@ -5,6 +5,7 @@ use crossterm::terminal::{
     EnterAlternateScreen, LeaveAlternateScreen,
 };
 use crossterm::{queue, Command};
+use std::fmt;
 use std::io::{stdout, Error, Write};
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Default)]
@@ -33,6 +34,11 @@ impl Position {
             col: self.col.saturating_sub(other.col),
             row: self.row.saturating_sub(other.row),
         }
+    }
+}
+impl fmt::Display for Position {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        write!(formatter, "({}, {})", self.col, self.row)
     }
 }
 
