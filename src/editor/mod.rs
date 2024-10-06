@@ -61,9 +61,9 @@ impl Editor {
                 })) => {
                     self.handle_key_event(code, modifiers);
                     self.print_bottom(&format!(
-                        "loc: {}, pos: {}, off: {}, [{}], key: {}",
-                        self.view.position,
+                        "pos: {}, cw: {}, off: {}, [{}], key: {}",
                         self.view.caret_screen_position(),
+                        self.view.position.col,
                         self.view.offset,
                         self.view
                             .get_fragment_by_position(self.view.position)
@@ -161,7 +161,13 @@ impl Editor {
                     (Esc, _) => break,
                     (Char(c), KeyModifiers::NONE | KeyModifiers::SHIFT) => {
                         self.view.insert_char(self.size, c);
-                        self.print_bottom(&format!("[ insert ] input: {c}"));
+                        let line = if let Some(l) = self.view.get_line(self.view.position.row) {
+                            l.content()
+                        } else {
+                            "no line"
+                        };
+                        self.print_bottom(&format!("[ insert ] input: {c}, content: {line}"));
+                    }
                     (Tab, KeyModifiers::NONE) => {
                         let c = '\t';
                         self.view.insert_char(self.size, c);
