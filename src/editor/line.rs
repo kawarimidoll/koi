@@ -45,6 +45,9 @@ impl Line {
     pub fn grapheme_count(&self) -> usize {
         self.fragments.len()
     }
+    pub fn get_str(&self) -> String {
+        self.get_str_by_col_range(0..self.col_width)
+    }
     pub fn get_str_by_col_range(&self, range: Range<usize>) -> String {
         if range.start == range.end {
             return String::default();
@@ -109,7 +112,33 @@ impl Line {
     }
     pub fn insert(&mut self, at_col_idx: usize, string: &str) {
         if at_col_idx < self.col_width {
-            let substr = self.get_str_by_col_range(0..at_col_idx);
+            // we can't use get_str_by_col_range here because we need special handling for tabs
+            let substr = if at_col_idx == 0 {
+                String::default()
+            } else {
+                let mut acc: usize = 0;
+                let mut end = 0;
+                for (i, fragment) in self.fragments.iter().enumerate() {
+                    acc = acc.saturating_add(fragment.width());
+                    if acc >= at_col_idx {
+                        end = i.saturating_add(1);
+                        break;
+                    }
+                }
+                format!(
+                    "{}",
+                    self.fragments[0..end]
+                        .iter()
+                        .fold(String::new(), |mut output, fragment| {
+                            if fragment.grapheme() == "\t" {
+                                let _ = write!(output, "\t");
+                            } else {
+                                let _ = write!(output, "{fragment}");
+                            }
+                            output
+                        }),
+                )
+            };
             self.string.insert_str(substr.len(), string);
         } else {
             self.string.push_str(string);
@@ -170,5 +199,39 @@ mod tests {
         assert_eq!(line.content(), "こokんにちは");
         assert_eq!(line.grapheme_count(), 7);
         assert_eq!(line.col_width(), 12);
+    }
+
+    #[test]
+    fn test_tab() {
+        let mut line = Line::from("\t");
+        assert_eq!(line.content(), "\t");
+        assert_eq!(line.grapheme_count(), 1);
+        assert_eq!(line.col_width(), 4);
+        assert_eq!(line.get_str(), "→   ");
+        line.insert(0, "ok");
+        assert_eq!(line.content(), "ok\t");
+        assert_eq!(line.grapheme_count(), 3);
+        assert_eq!(line.col_width(), 4);
+        assert_eq!(line.get_str(), "ok→ ");
+
+        let mut line = Line::from("test_from");
+        line.insert(1, "\t");
+        assert_eq!(line.content(), "t\test_from");
+        assert_eq!(line.col_width(), 12);
+        assert_eq!(line.get_str(), "t→  est_from");
+        line.insert(4, "\t");
+        assert_eq!(line.get_str(), "t→  →   est_from");
+        assert_eq!(line.content(), "t\t\test_from");
+        line.insert(14, "\t");
+        assert_eq!(line.get_str(), "t→  →   est_fr→ om");
+        assert_eq!(line.content(), "t\t\test_fr\tom");
+
+        let mut line = Line::from("qwert");
+        line.insert(1, "\t");
+        assert_eq!(line.content(), "q\twert");
+        assert_eq!(line.get_str(), "q→  wert");
+        line.insert(4, "a");
+        assert_eq!(line.content(), "q\tawert");
+        assert_eq!(line.get_str(), "q→  awert");
     }
 }

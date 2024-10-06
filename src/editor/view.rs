@@ -1,3 +1,4 @@
+use super::line::Line;
 use super::buffer::Buffer;
 use super::terminal::{Position, Size, Terminal};
 use super::text_fragment::TextFragment;
@@ -40,6 +41,9 @@ impl View {
             col,
             row: min(self.position.row, self.buffer.lines.len()),
         }
+    }
+    pub fn get_line(&self, row: usize) -> Option<&Line> {
+        self.buffer.lines.get(row)
     }
     pub fn get_fragment_by_position(&self, pos: Position) -> Option<&TextFragment> {
         self.buffer

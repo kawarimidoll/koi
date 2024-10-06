@@ -115,5 +115,12 @@ mod tests {
         buffer.lines = Buffer::gen_lines("this\nis\ntest.\n");
         buffer.insert("ok", Position { col: 1, row: 0 });
         assert_eq!(buffer.lines[0].content(), "tokhis");
+
+        let mut buffer = Buffer::default();
+        buffer.lines = Buffer::gen_lines("qwert");
+        buffer.insert("\t", Position { col: 1, row: 0 });
+        assert_eq!(buffer.lines[0].content(), "q\twert");
+        buffer.insert("a", Position { col: 4, row: 0 });
+        assert_eq!(buffer.lines[0].content(), "q\tawert");
     }
 }
