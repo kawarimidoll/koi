@@ -2,7 +2,7 @@
 use crossterm::event::{
     read,
     Event::{Key, Resize},
-    KeyCode::{self, Char, Down, End, Esc, Home, Left, PageDown, PageUp, Right, Tab, Up},
+    KeyCode::{self, Char, Down, End, Enter, Esc, Home, Left, PageDown, PageUp, Right, Tab, Up},
     KeyEvent, KeyModifiers,
 };
 use std::io::Error;
@@ -170,6 +170,16 @@ impl Editor {
                     }
                     (Tab, KeyModifiers::NONE) => {
                         let c = '\t';
+                        self.view.insert_char(self.size, c);
+                        let line = if let Some(l) = self.view.get_line(self.view.position.row) {
+                            l.content()
+                        } else {
+                            "no line"
+                        };
+                        self.print_bottom(&format!("[ insert ] input: {c}, content: {line}"));
+                    }
+                    (Enter, KeyModifiers::NONE) => {
+                        let c = '\n';
                         self.view.insert_char(self.size, c);
                         let line = if let Some(l) = self.view.get_line(self.view.position.row) {
                             l.content()
