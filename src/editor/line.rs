@@ -181,6 +181,33 @@ impl Line {
         self.fragments = fragments;
         self.col_width = col_width;
     }
+    pub fn remove(&mut self, start_grapheme_idx: usize, grapheme_count: usize) {
+        if start_grapheme_idx < self.grapheme_count() {
+            let start_byte_idx: usize = self.fragments[0..start_grapheme_idx]
+                .iter()
+                .map(TextFragment::byte_len)
+                .sum();
+
+            let end_grapheme_idx = start_grapheme_idx.saturating_add(grapheme_count);
+            if end_grapheme_idx < self.grapheme_count() {
+                let end_byte_idx = self.fragments[0..end_grapheme_idx]
+                    .iter()
+                    .map(TextFragment::byte_len)
+                    .sum();
+                self.string.drain(start_byte_idx..end_byte_idx);
+            } else {
+                self.string.drain(start_byte_idx..);
+            }
+            let diff_width = self
+                .fragments
+                .drain(start_grapheme_idx..end_grapheme_idx)
+                .collect::<Vec<_>>()
+                .iter()
+                .map(TextFragment::width)
+                .sum();
+            self.col_width = self.col_width.saturating_sub(diff_width);
+        }
+    }
 }
 
 #[cfg(test)]
@@ -211,6 +238,10 @@ mod tests {
         assert_eq!(line.content(), "tokest_from");
         assert_eq!(line.grapheme_count(), 11);
         assert_eq!(line.col_width(), 11);
+        line.remove(1, 2);
+        assert_eq!(line.content(), "test_from");
+        assert_eq!(line.grapheme_count(), 9);
+        assert_eq!(line.col_width(), 9);
 
         let mut line = Line::from("こんにちは");
         assert_eq!(line.content(), "こんにちは");
@@ -233,6 +264,10 @@ mod tests {
         assert_eq!(line.content(), "こokんにちは");
         assert_eq!(line.grapheme_count(), 7);
         assert_eq!(line.col_width(), 12);
+        line.remove(2, 2);
+        assert_eq!(line.content(), "こoにちは");
+        assert_eq!(line.grapheme_count(), 5);
+        assert_eq!(line.col_width(), 9);
     }
 
     #[test]

@@ -70,6 +70,9 @@ impl TextFragment {
     pub fn grapheme(&self) -> &str {
         &self.grapheme
     }
+    pub fn byte_len(&self) -> usize {
+        self.grapheme.len()
+    }
     pub fn width(&self) -> usize {
         self.width
     }
