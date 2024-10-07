@@ -161,38 +161,29 @@ impl Editor {
                     (Esc, _) => break,
                     (Char(c), KeyModifiers::NONE | KeyModifiers::SHIFT) => {
                         self.view.insert_char(self.size, c);
-                        let line = if let Some(l) = self.view.get_line(self.view.position.row) {
-                            l.content()
-                        } else {
-                            "no line"
-                        };
-                        self.print_bottom(&format!("[ insert ] input: {c}, content: {line}"));
+                        self.insert_message(&c.to_string());
                     }
                     (Tab, KeyModifiers::NONE) => {
-                        let c = '\t';
-                        self.view.insert_char(self.size, c);
-                        let line = if let Some(l) = self.view.get_line(self.view.position.row) {
-                            l.content()
-                        } else {
-                            "no line"
-                        };
-                        self.print_bottom(&format!("[ insert ] input: {c}, content: {line}"));
+                        self.view.insert_char(self.size, '\t');
+                        self.insert_message("Tab");
                     }
                     (Enter, KeyModifiers::NONE) => {
-                        let c = '\n';
-                        self.view.insert_char(self.size, c);
-                        let line = if let Some(l) = self.view.get_line(self.view.position.row) {
-                            l.content()
-                        } else {
-                            "no line"
-                        };
-                        self.print_bottom(&format!("[ insert ] input: {c}, content: {line}"));
+                        self.view.insert_char(self.size, '\n');
+                        self.insert_message("Enter");
                     }
                     _ => (),
                 }
             }
         }
         Terminal::set_cursor_style(CursorStyle::DefaultUserShape).unwrap();
+    }
+    fn insert_message(&self, input: &str) {
+        let line = self
+            .view
+            .get_line(self.view.position.row)
+            .map_or("no line", line::Line::content);
+
+        self.print_bottom(&format!("[ insert ] input: {input}, content: {line}"));
     }
 }
 

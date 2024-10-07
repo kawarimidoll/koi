@@ -149,9 +149,7 @@ impl Line {
                         break;
                     }
                 }
-                format!(
-                    "{}",
-                    self.fragments[0..end]
+                self.fragments[0..end]
                         .iter()
                         .fold(String::new(), |mut output, fragment| {
                             if fragment.grapheme() == "\t" {
@@ -160,8 +158,7 @@ impl Line {
                                 let _ = write!(output, "{fragment}");
                             }
                             output
-                        }),
-                )
+                        }).to_string()
             };
             self.string.insert_str(substr.len(), string);
         } else {
