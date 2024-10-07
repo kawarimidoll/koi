@@ -1,5 +1,5 @@
-use super::line::Line;
 use super::buffer::Buffer;
+use super::line::Line;
 use super::terminal::{Position, Size, Terminal};
 use super::text_fragment::TextFragment;
 use crossterm::event::KeyCode::{self, Down, End, Home, Left, PageDown, PageUp, Right, Up};
@@ -54,6 +54,13 @@ impl View {
 
     // TODO: support string
     pub fn insert_char(&mut self, size: Size, c: char) {
+        if c == '\n' {
+            if self.buffer.insert_newline(self.position) {
+                self.ensure_redraw();
+                self.move_position(size, Right);
+            }
+            return;
+        }
         if self.buffer.insert(&c.to_string(), self.position) {
             self.ensure_redraw();
             self.move_position(size, Right);
@@ -387,5 +394,9 @@ mod tests {
         view.insert_char(size, 'o');
         assert_eq!(view.buffer.lines[0].content(), "tohis");
         assert_eq!(view.position, Position { col: 2, row: 0 });
+        view.insert_char(size, '\n');
+        assert_eq!(view.buffer.lines[0].content(), "to");
+        assert_eq!(view.buffer.lines[1].content(), "his");
+        assert_eq!(view.position, Position { col: 0, row: 1 });
     }
 }
