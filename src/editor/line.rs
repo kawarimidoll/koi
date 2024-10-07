@@ -150,15 +150,16 @@ impl Line {
                     }
                 }
                 self.fragments[0..end]
-                        .iter()
-                        .fold(String::new(), |mut output, fragment| {
-                            if fragment.grapheme() == "\t" {
-                                let _ = write!(output, "\t");
-                            } else {
-                                let _ = write!(output, "{fragment}");
-                            }
-                            output
-                        }).to_string()
+                    .iter()
+                    .fold(String::new(), |mut output, fragment| {
+                        if fragment.grapheme() == "\t" {
+                            let _ = write!(output, "\t");
+                        } else {
+                            let _ = write!(output, "{fragment}");
+                        }
+                        output
+                    })
+                    .to_string()
             };
             self.string.insert_str(substr.len(), string);
         } else {
