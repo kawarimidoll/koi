@@ -92,6 +92,17 @@ impl Buffer {
         // maybe dead code, but the compiler doesn't know that
         false
     }
+    pub fn insert_newline(&mut self, at: Position) -> bool {
+        let Position { col, row } = at;
+        if row >= self.get_lines_count() {
+            self.lines.push(Line::default());
+        } else {
+            // we have a valid row
+            let second_half = self.lines[row].split_off(col);
+            self.lines.insert(row.saturating_add(1), second_half);
+        }
+        true
+    }
 }
 
 #[cfg(test)]
@@ -122,5 +133,23 @@ mod tests {
         assert_eq!(buffer.lines[0].content(), "q\twert");
         buffer.insert("a", Position { col: 4, row: 0 });
         assert_eq!(buffer.lines[0].content(), "q\tawert");
+    }
+
+    #[test]
+    fn test_insert_newline() {
+        let mut buffer = Buffer::default();
+        buffer.lines = Buffer::gen_lines("this\nis\ntest.\n");
+        buffer.insert_newline(Position { col: 0, row: 1 });
+        assert_eq!(buffer.lines.len(), 4);
+        assert_eq!(buffer.lines[1].content(), "");
+        assert_eq!(buffer.lines[2].content(), "is");
+        buffer.insert_newline(Position { col: 2, row: 2 });
+        assert_eq!(buffer.lines.len(), 5);
+        assert_eq!(buffer.lines[2].content(), "is");
+        assert_eq!(buffer.lines[3].content(), "");
+        buffer.insert_newline(Position { col: 1, row: 2 });
+        assert_eq!(buffer.lines.len(), 6);
+        assert_eq!(buffer.lines[2].content(), "i");
+        assert_eq!(buffer.lines[3].content(), "s");
     }
 }
