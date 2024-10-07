@@ -1,6 +1,7 @@
 use std::fmt;
 use unicode_width::UnicodeWidthStr;
 
+#[derive(Clone)]
 pub struct TextFragment {
     grapheme: String,
     width: usize,

@@ -8,7 +8,7 @@ use std::fmt::Write;
 const ELLIPSIS_LEFT: &str = "«";
 const ELLIPSIS_RIGHT: &str = "»";
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct Line {
     fragments: Vec<TextFragment>,
     string: String,
@@ -109,6 +109,30 @@ impl Line {
     }
     pub fn col_width(&self) -> usize {
         self.col_width
+    }
+    // TODO: needs performance improvement... obviously not efficient
+    pub fn split_off(&mut self, at_col_idx: usize) -> Self {
+        if at_col_idx == 0 {
+            let remainder = self.clone();
+            self.string.clear();
+            self.fragments.clear();
+            self.col_width = 0;
+            return remainder;
+        }
+        let mut acc: usize = 0;
+        let mut byte_len: usize = 0;
+        for fragment in &self.fragments {
+            acc = acc.saturating_add(fragment.width());
+            byte_len = byte_len.saturating_add(fragment.grapheme().len());
+            if acc >= at_col_idx {
+                break;
+            }
+        }
+        let remainder = self.string.split_off(byte_len);
+        let (fragments, col_width) = Self::string_to_fragments(&self.string);
+        self.fragments = fragments;
+        self.col_width = col_width;
+        Self::from(&remainder)
     }
     pub fn insert(&mut self, at_col_idx: usize, string: &str) {
         if at_col_idx < self.col_width {
@@ -233,5 +257,23 @@ mod tests {
         line.insert(4, "a");
         assert_eq!(line.content(), "q\tawert");
         assert_eq!(line.get_str(), "q→  awert");
+    }
+
+    #[test]
+    fn test_split_off() {
+        let mut line = Line::from("qwert");
+        assert_eq!(line.content(), "qwert");
+        let remainder = line.split_off(3);
+        assert_eq!(line.content(), "qwe");
+        assert_eq!(remainder.content(), "rt");
+        let remainder = line.split_off(1);
+        assert_eq!(line.content(), "q");
+        assert_eq!(remainder.content(), "we");
+        let remainder = line.split_off(1);
+        assert_eq!(line.content(), "q");
+        assert_eq!(remainder.content(), "");
+        let remainder = line.split_off(0);
+        assert_eq!(line.content(), "");
+        assert_eq!(remainder.content(), "q");
     }
 }
