@@ -107,6 +107,18 @@ impl Line {
             .map(TextFragment::width)
             .sum()
     }
+    pub fn col_idx_to_grapheme_idx(&self, col_idx: usize) -> usize {
+        let mut acc: usize = 0;
+        let mut grapheme_idx: usize = 0;
+        for fragment in &self.fragments {
+            if acc >= col_idx {
+                break;
+            }
+            acc = acc.saturating_add(fragment.width());
+            grapheme_idx = grapheme_idx.saturating_add(1);
+        }
+        return grapheme_idx;
+    }
     pub fn col_width(&self) -> usize {
         self.col_width
     }
@@ -255,6 +267,20 @@ mod tests {
         line.insert(4, "a");
         assert_eq!(line.content(), "q\tawert");
         assert_eq!(line.get_str(), "q→  awert");
+    }
+
+    #[test]
+    fn test_idx_conversion() {
+        let line = Line::from("qwert");
+        assert_eq!(line.col_idx_to_grapheme_idx(0), 0);
+        assert_eq!(line.col_idx_to_grapheme_idx(3), 3);
+        assert_eq!(line.grapheme_idx_to_col_idx(0), 0);
+        assert_eq!(line.grapheme_idx_to_col_idx(3), 3);
+        let line = Line::from("こんにちは");
+        assert_eq!(line.col_idx_to_grapheme_idx(0), 0);
+        assert_eq!(line.col_idx_to_grapheme_idx(4), 2);
+        assert_eq!(line.grapheme_idx_to_col_idx(0), 0);
+        assert_eq!(line.grapheme_idx_to_col_idx(2), 4);
     }
 
     #[test]
