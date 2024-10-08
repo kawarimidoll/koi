@@ -201,14 +201,18 @@ impl Line {
             } else {
                 self.string.drain(start_byte_idx..);
             }
-            let diff_width = self
-                .fragments
-                .drain(start_grapheme_idx..end_grapheme_idx)
-                .collect::<Vec<_>>()
-                .iter()
-                .map(TextFragment::width)
-                .sum();
-            self.col_width = self.col_width.saturating_sub(diff_width);
+            // TODO: needs performance improvement... obviously not efficient
+            let (fragments, col_width) = Self::string_to_fragments(&self.string);
+            self.fragments = fragments;
+            self.col_width = col_width;
+            // let diff_width = self
+            //     .fragments
+            //     .drain(start_grapheme_idx..end_grapheme_idx)
+            //     .collect::<Vec<_>>()
+            //     .iter()
+            //     .map(TextFragment::width)
+            //     .sum();
+            // self.col_width = self.col_width.saturating_sub(diff_width);
         }
     }
 }
