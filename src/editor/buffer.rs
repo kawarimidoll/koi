@@ -103,6 +103,27 @@ impl Buffer {
         }
         true
     }
+    pub fn remove_char(&mut self, at: Position) -> bool {
+        let Position { col, row } = at;
+        // out of bounds
+        if row >= self.get_lines_count() {
+            return false;
+        }
+
+        // below here, we have a valid row
+        if col < self.lines[row].col_width() {
+            // remove a character
+            self.lines[row].remove(col, 1);
+        } else if row < self.get_lines_count().saturating_sub(1) {
+            // remove a newline (merge two lines)
+            let next_line = self.lines.remove(row.saturating_add(1));
+            self.lines[row].append(&next_line);
+        } else {
+            // the last line, the last character
+            return false;
+        }
+        true
+    }
 }
 
 #[cfg(test)]
@@ -151,5 +172,17 @@ mod tests {
         assert_eq!(buffer.lines.len(), 6);
         assert_eq!(buffer.lines[2].content(), "i");
         assert_eq!(buffer.lines[3].content(), "s");
+    }
+
+    #[test]
+    fn test_remove_char() {
+        let mut buffer = Buffer::default();
+        buffer.lines = Buffer::gen_lines("this\nis\ntest.\n");
+        buffer.remove_char(Position { col: 0, row: 1 });
+        assert_eq!(buffer.lines.len(), 3);
+        assert_eq!(buffer.lines[1].content(), "s");
+        buffer.remove_char(Position { col: 1, row: 1 });
+        assert_eq!(buffer.lines.len(), 2);
+        assert_eq!(buffer.lines[1].content(), "stest.");
     }
 }
