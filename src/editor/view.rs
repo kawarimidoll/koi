@@ -66,6 +66,11 @@ impl View {
             self.move_position(size, Right);
         }
     }
+    pub fn remove_char(&mut self) {
+        if self.buffer.remove_char(self.position) {
+            self.ensure_redraw();
+        }
+    }
 
     pub fn scroll_screen(&mut self, size: Size, code: KeyCode) {
         let saved_offset = self.offset;
@@ -398,5 +403,17 @@ mod tests {
         assert_eq!(view.buffer.lines[0].content(), "to");
         assert_eq!(view.buffer.lines[1].content(), "his");
         assert_eq!(view.position, Position { col: 0, row: 1 });
+    }
+
+    #[test]
+    fn test_remove_char() {
+        let mut view = View::default();
+        view.buffer.lines = Buffer::gen_lines("this\nis\ntest.\n");
+        view.position = Position { col: 1, row: 0 };
+        view.remove_char();
+        assert_eq!(view.buffer.lines[0].content(), "tis");
+        view.position = Position { col: 3, row: 0 };
+        view.remove_char();
+        assert_eq!(view.buffer.lines[0].content(), "tisis");
     }
 }
