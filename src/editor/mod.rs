@@ -171,6 +171,19 @@ impl Editor {
                         self.view.insert_char(self.size, '\n');
                         self.insert_message("Enter");
                     }
+                    (KeyCode::Delete, KeyModifiers::NONE) => {
+                        self.view.remove_char();
+                        self.insert_message("Delete");
+                    }
+                    (KeyCode::Backspace, KeyModifiers::NONE) => {
+                        // just detect if the caret is at the beginning of the buffer
+                        // so we don't need to use caret_screen_position() here
+                        if self.view.position.col > 0 || self.view.position.row > 0 {
+                            self.view.move_position(self.size, Left);
+                            self.view.remove_char();
+                            self.insert_message("Backspace");
+                        }
+                    }
                     _ => (),
                 }
             }
