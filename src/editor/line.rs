@@ -181,6 +181,9 @@ impl Line {
         self.fragments = fragments;
         self.col_width = col_width;
     }
+    pub fn append(&mut self, other: &Self) {
+        self.insert(self.col_width(), &other.string);
+    }
     pub fn remove(&mut self, start_grapheme_idx: usize, grapheme_count: usize) {
         if start_grapheme_idx < self.grapheme_count() {
             let start_byte_idx: usize = self.fragments[0..start_grapheme_idx]
@@ -268,6 +271,10 @@ mod tests {
         assert_eq!(line.content(), "こoにちは");
         assert_eq!(line.grapheme_count(), 5);
         assert_eq!(line.col_width(), 9);
+
+        let line2 = Line::from("test_from");
+        line.append(&line2);
+        assert_eq!(line.content(), "こoにちはtest_from");
     }
 
     #[test]
