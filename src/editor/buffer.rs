@@ -1,5 +1,6 @@
 use super::line::Line;
-use super::terminal::{Position, Size};
+use super::position::Position;
+use super::size::Size;
 use std::{cmp::min, fs::read_to_string, io::Error};
 
 #[derive(Default)]

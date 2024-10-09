@@ -1,6 +1,8 @@
 use super::buffer::Buffer;
 use super::line::Line;
-use super::terminal::{Position, Size, Terminal};
+use super::terminal::Terminal;
+use super::position::Position;
+use super::size:: Size;
 use super::text_fragment::TextFragment;
 use crossterm::event::KeyCode::{self, Down, End, Home, Left, PageDown, PageUp, Right, Up};
 use std::{cmp::min, io::Error};

@@ -6,10 +6,13 @@ use crossterm::event::{
     KeyEvent, KeyModifiers,
 };
 use std::io::Error;
-use terminal::{CursorStyle, Size, Terminal};
+use terminal::{CursorStyle, Terminal};
 mod terminal;
 // use buffer::Buffer;
 mod buffer;
+mod position;
+mod size;
+use size::Size;
 use view::View;
 mod line;
 mod text_fragment;

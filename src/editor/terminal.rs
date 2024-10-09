@@ -1,3 +1,5 @@
+use super::position::Position;
+use super::size::Size;
 pub use crossterm::cursor::SetCursorStyle as CursorStyle;
 use crossterm::cursor::{Hide, MoveTo, Show};
 use crossterm::style::Print;
@@ -6,42 +8,7 @@ use crossterm::terminal::{
     EnterAlternateScreen, LeaveAlternateScreen,
 };
 use crossterm::{queue, Command};
-use std::fmt;
 use std::io::{stdout, Error, Write};
-
-#[derive(Copy, Clone, Eq, PartialEq, Debug, Default)]
-pub struct Size {
-    pub width: usize,
-    pub height: usize,
-}
-impl Size {
-    #[cfg(test)]
-    pub fn new(width: usize, height: usize) -> Self {
-        Self { width, height }
-    }
-}
-#[derive(Copy, Clone, Eq, PartialEq, Debug, Default)]
-pub struct Position {
-    pub col: usize,
-    pub row: usize,
-}
-impl Position {
-    #[cfg(test)]
-    pub fn new(col: usize, row: usize) -> Self {
-        Self { col, row }
-    }
-    pub const fn saturating_sub(&self, other: &Self) -> Self {
-        Self {
-            col: self.col.saturating_sub(other.col),
-            row: self.row.saturating_sub(other.row),
-        }
-    }
-}
-impl fmt::Display for Position {
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        write!(formatter, "({}, {})", self.col, self.row)
-    }
-}
 
 pub struct Terminal {}
 
