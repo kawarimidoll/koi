@@ -29,8 +29,8 @@ impl View {
         self.caret_snap_on_line().saturating_sub(&self.offset)
     }
     fn caret_snap_on_line(&self) -> Position {
-        let col = if let Some(line) = self.buffer.lines.get(self.position.line_idx) {
-            if let Some(fragment) = line.get_fragment_by_col_idx(self.position.col) {
+        let col_idx = if let Some(line) = self.buffer.lines.get(self.position.line_idx) {
+            if let Some(fragment) = line.get_fragment_by_col_idx(self.position.col_idx) {
                 fragment.left_col_width()
             } else {
                 line.col_width()
@@ -41,7 +41,7 @@ impl View {
 
         Position {
             line_idx: min(self.position.line_idx, self.buffer.lines.len()),
-            col,
+            col_idx,
         }
     }
     pub fn get_line(&self, line_idx: usize) -> Option<&Line> {
@@ -51,7 +51,7 @@ impl View {
         self.buffer
             .lines
             .get(pos.line_idx)
-            .and_then(|line| line.get_fragment_by_col_idx(pos.col))
+            .and_then(|line| line.get_fragment_by_col_idx(pos.col_idx))
     }
 
     // TODO: support string
@@ -89,12 +89,12 @@ impl View {
     }
     fn scroll_left(&mut self) {
         self.move_prev_grapheme_nowrap();
-        self.offset.col = self.offset.col.saturating_sub(1);
+        self.offset.col_idx = self.offset.col_idx.saturating_sub(1);
     }
     fn scroll_right(&mut self, size: Size) {
         self.move_next_grapheme_nowrap();
-        self.offset.col = min(
-            self.offset.col.saturating_add(1),
+        self.offset.col_idx = min(
+            self.offset.col_idx.saturating_add(1),
             self.buffer
                 .get_line_col_width(self.position.line_idx)
                 .saturating_add(1)
@@ -123,8 +123,8 @@ impl View {
             Right => self.move_next_grapheme(),
             Up => self.move_prev_line(1),
             Down => self.move_next_line(1),
-            Home => self.position.col = 0,
-            End => self.position.col = usize::MAX,
+            Home => self.position.col_idx = 0,
+            End => self.position.col_idx = usize::MAX,
             _ => (),
         };
         self.scroll_into_view(size);
@@ -132,20 +132,20 @@ impl View {
     #[allow(clippy::arithmetic_side_effects)]
     // allow this because boundary condition is confirmed by myself
     fn move_prev_grapheme(&mut self) {
-        self.position.col = self.caret_snap_on_line().col;
-        if self.position.col > 0 {
-            self.position.col -= 1;
-            self.position.col = self.caret_snap_on_line().col;
+        self.position.col_idx = self.caret_snap_on_line().col_idx;
+        if self.position.col_idx > 0 {
+            self.position.col_idx -= 1;
+            self.position.col_idx = self.caret_snap_on_line().col_idx;
         } else if self.position.line_idx > 0 {
             self.move_prev_line(1);
-            self.position.col = self.buffer.get_line_col_width(self.position.line_idx);
+            self.position.col_idx = self.buffer.get_line_col_width(self.position.line_idx);
         }
     }
     fn move_next_grapheme(&mut self) {
-        self.position.col = self.caret_snap_on_line().col;
+        self.position.col_idx = self.caret_snap_on_line().col_idx;
 
         let step = if let Some(line) = self.buffer.lines.get(self.position.line_idx) {
-            if let Some(fragment) = line.get_fragment_by_col_idx(self.position.col) {
+            if let Some(fragment) = line.get_fragment_by_col_idx(self.position.col_idx) {
                 fragment.width()
             } else {
                 1
@@ -154,19 +154,19 @@ impl View {
             0
         };
 
-        if self.position.col < self.buffer.get_line_col_width(self.position.line_idx) {
-            self.position.col = self.position.col.saturating_add(step);
+        if self.position.col_idx < self.buffer.get_line_col_width(self.position.line_idx) {
+            self.position.col_idx = self.position.col_idx.saturating_add(step);
         } else if self.position.line_idx < self.buffer.get_lines_count() {
             self.move_next_line(1);
-            self.position.col = 0;
+            self.position.col_idx = 0;
         }
     }
     fn move_prev_grapheme_nowrap(&mut self) {
-        self.position.col = self.position.col.saturating_sub(1);
+        self.position.col_idx = self.position.col_idx.saturating_sub(1);
     }
     fn move_next_grapheme_nowrap(&mut self) {
-        self.position.col = min(
-            self.position.col.saturating_add(1),
+        self.position.col_idx = min(
+            self.position.col_idx.saturating_add(1),
             self.buffer.get_line_col_width(self.position.line_idx),
         );
     }
@@ -184,14 +184,14 @@ impl View {
         }
     }
     fn scroll_into_view(&mut self, size: Size) {
-        let Position { line_idx, col } = self.caret_snap_on_line();
+        let Position { line_idx, col_idx } = self.caret_snap_on_line();
         let Size { width, height } = size;
         // horizontal
-        if col < self.offset.col {
-            self.offset.col = col;
+        if col_idx < self.offset.col_idx {
+            self.offset.col_idx = col_idx;
             self.buffer.ensure_redraw();
-        } else if col >= self.offset.col.saturating_add(width) {
-            self.offset.col = col.saturating_add(1).saturating_sub(width);
+        } else if col_idx >= self.offset.col_idx.saturating_add(width) {
+            self.offset.col_idx = col_idx.saturating_add(1).saturating_sub(width);
             self.buffer.ensure_redraw();
         }
         // vertical
@@ -397,45 +397,24 @@ mod tests {
         let mut view = View::default();
         let size = Size::new(10, 10);
         view.buffer.lines = Buffer::gen_lines("this\nis\ntest.\n");
-        view.position = Position {
-            col: 1,
-            line_idx: 0,
-        };
+        view.position = Position::new(0, 1);
         view.insert_char(size, 'o');
         assert_eq!(view.buffer.lines[0].content(), "tohis");
-        assert_eq!(
-            view.position,
-            Position {
-                col: 2,
-                line_idx: 0
-            }
-        );
+        assert_eq!(view.position, Position::new(0, 2));
         view.insert_char(size, '\n');
         assert_eq!(view.buffer.lines[0].content(), "to");
         assert_eq!(view.buffer.lines[1].content(), "his");
-        assert_eq!(
-            view.position,
-            Position {
-                col: 0,
-                line_idx: 1
-            }
-        );
+        assert_eq!(view.position, Position::new(1, 0));
     }
 
     #[test]
     fn test_remove_char() {
         let mut view = View::default();
         view.buffer.lines = Buffer::gen_lines("this\nis\ntest.\n");
-        view.position = Position {
-            col: 1,
-            line_idx: 0,
-        };
+        view.position = Position::new(0, 1);
         view.remove_char();
         assert_eq!(view.buffer.lines[0].content(), "tis");
-        view.position = Position {
-            col: 3,
-            line_idx: 0,
-        };
+        view.position = Position::new(0, 3);
         view.remove_char();
         assert_eq!(view.buffer.lines[0].content(), "tisis");
     }

@@ -56,7 +56,7 @@ impl Terminal {
     }
     pub fn move_caret_to(position: Position) -> Result<(), Error> {
         #[allow(clippy::as_conversions, clippy::cast_possible_truncation)]
-        Self::queue_command(MoveTo(position.col as u16, position.line_idx as u16))
+        Self::queue_command(MoveTo(position.col_idx as u16, position.line_idx as u16))
     }
     pub fn hide_caret() -> Result<(), Error> {
         Self::queue_command(Hide)
@@ -68,8 +68,8 @@ impl Terminal {
         Self::queue_command(Print(string))
     }
     pub fn print_row(line_idx: usize, line_text: &str) -> Result<(), Error> {
-        let col = 0;
-        Self::move_caret_to(Position { line_idx, col })?;
+        let col_idx = 0;
+        Self::move_caret_to(Position { line_idx, col_idx })?;
         Self::clear_line()?;
         Self::print(line_text)
     }

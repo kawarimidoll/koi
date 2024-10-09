@@ -60,7 +60,7 @@ impl Editor {
                     self.print_bottom(&format!(
                         "pos: {}, cw: {}, off: {}, [{}], key: {}",
                         self.view.caret_screen_position(),
-                        self.view.position.col,
+                        self.view.position.col_idx,
                         self.view.offset,
                         self.view
                             .get_fragment_by_position(self.view.position)
@@ -200,7 +200,7 @@ impl Editor {
                     (KeyCode::Backspace, KeyModifiers::NONE) => {
                         // just detect if the caret is at the beginning of the buffer
                         // so we don't need to use caret_screen_position() here
-                        if self.view.position.col > 0 || self.view.position.line_idx > 0 {
+                        if self.view.position.col_idx > 0 || self.view.position.line_idx > 0 {
                             self.view.move_position(self.size, KeyCode::Left);
                             self.view.remove_char();
                             self.insert_message("Backspace");
