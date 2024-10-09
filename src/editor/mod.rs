@@ -106,6 +106,7 @@ impl Editor {
                 self.view.move_position(self.size, Right);
                 self.insert_loop();
             }
+            (Char('x'), KeyModifiers::NONE) => self.view.remove_char(),
 
             (Left | Down | Right | Up, KeyModifiers::SHIFT)
             | (PageDown | PageUp, KeyModifiers::NONE) => {
