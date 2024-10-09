@@ -2,6 +2,8 @@ use super::position::Position;
 use super::size::Size;
 pub use crossterm::cursor::SetCursorStyle as CursorStyle;
 use crossterm::cursor::{Hide, MoveTo, Show};
+use crossterm::event::read;
+pub use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use crossterm::style::Print;
 use crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, size, Clear, ClearType, DisableLineWrap, EnableLineWrap,
@@ -39,6 +41,9 @@ impl Terminal {
     }
     fn disable_line_wrap() -> Result<(), Error> {
         Self::queue_command(DisableLineWrap)
+    }
+    pub fn read_event() -> Result<Event, Error> {
+        read()
     }
     pub fn set_cursor_style(style: CursorStyle) -> Result<(), Error> {
         Self::queue_command(style)

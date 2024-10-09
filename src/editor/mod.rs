@@ -1,12 +1,6 @@
 // 日本語🇯🇵の表示テスト
-use crossterm::event::{
-    read,
-    Event::{Key, Resize},
-    KeyCode::{self, Char, Down, End, Enter, Esc, Home, Left, PageDown, PageUp, Right, Tab, Up},
-    KeyEvent, KeyModifiers,
-};
 use std::io::Error;
-use terminal::{CursorStyle, Terminal};
+use terminal::{CursorStyle, Event, KeyCode, KeyEvent, KeyModifiers, Terminal};
 mod terminal;
 // use buffer::Buffer;
 mod buffer;
@@ -54,8 +48,8 @@ impl Editor {
             if self.should_quit {
                 break;
             }
-            match read() {
-                Ok(Key(KeyEvent {
+            match Terminal::read_event() {
+                Ok(Event::Key(KeyEvent {
                     code,
                     modifiers,
                     // necessary for windows
@@ -82,7 +76,7 @@ impl Editor {
                         code,
                     ));
                 }
-                Ok(Resize(width16, height16)) => {
+                Ok(Event::Resize(width16, height16)) => {
                     self.handle_resize_event(width16, height16);
                 }
                 Err(err) => {
@@ -103,29 +97,53 @@ impl Editor {
 
     fn handle_key_event(&mut self, code: KeyCode, modifiers: KeyModifiers) {
         match (code, modifiers) {
-            (Char('q'), KeyModifiers::NONE) => self.should_quit = true,
-            (Char('i'), KeyModifiers::NONE) => self.insert_loop(),
-            (Char('a'), KeyModifiers::NONE) => {
-                self.view.move_position(self.size, Right);
+            (KeyCode::Char('q'), KeyModifiers::NONE) => self.should_quit = true,
+            (KeyCode::Char('i'), KeyModifiers::NONE) => self.insert_loop(),
+            (KeyCode::Char('a'), KeyModifiers::NONE) => {
+                self.view.move_position(self.size, KeyCode::Right);
                 self.insert_loop();
             }
-            (Char('x'), KeyModifiers::NONE) => self.view.remove_char(),
+            (KeyCode::Char('x'), KeyModifiers::NONE) => self.view.remove_char(),
 
-            (Left | Down | Right | Up, KeyModifiers::SHIFT)
-            | (PageDown | PageUp, KeyModifiers::NONE) => {
+            (KeyCode::Left | KeyCode::Down | KeyCode::Right | KeyCode::Up, KeyModifiers::SHIFT)
+            | (KeyCode::PageDown | KeyCode::PageUp, KeyModifiers::NONE) => {
                 self.view.scroll_screen(self.size, code);
             }
-            (Left | Down | Right | Up | Home | End, KeyModifiers::NONE) => {
+            (
+                KeyCode::Left
+                | KeyCode::Down
+                | KeyCode::Right
+                | KeyCode::Up
+                | KeyCode::Home
+                | KeyCode::End,
+                KeyModifiers::NONE,
+            ) => {
                 self.view.move_position(self.size, code);
             }
-            (Char('h'), KeyModifiers::NONE) => self.view.move_position(self.size, Left),
-            (Char('H'), KeyModifiers::SHIFT) => self.view.move_position(self.size, Home),
-            (Char('j'), KeyModifiers::NONE) => self.view.move_position(self.size, Down),
-            (Char('k'), KeyModifiers::NONE) => self.view.move_position(self.size, Up),
-            (Char('l'), KeyModifiers::NONE) => self.view.move_position(self.size, Right),
-            (Char('L'), KeyModifiers::SHIFT) => self.view.move_position(self.size, End),
-            (Char('f'), KeyModifiers::CONTROL) => self.view.scroll_screen(self.size, PageDown),
-            (Char('b'), KeyModifiers::CONTROL) => self.view.scroll_screen(self.size, PageUp),
+            (KeyCode::Char('h'), KeyModifiers::NONE) => {
+                self.view.move_position(self.size, KeyCode::Left)
+            }
+            (KeyCode::Char('H'), KeyModifiers::SHIFT) => {
+                self.view.move_position(self.size, KeyCode::Home)
+            }
+            (KeyCode::Char('j'), KeyModifiers::NONE) => {
+                self.view.move_position(self.size, KeyCode::Down)
+            }
+            (KeyCode::Char('k'), KeyModifiers::NONE) => {
+                self.view.move_position(self.size, KeyCode::Up)
+            }
+            (KeyCode::Char('l'), KeyModifiers::NONE) => {
+                self.view.move_position(self.size, KeyCode::Right)
+            }
+            (KeyCode::Char('L'), KeyModifiers::SHIFT) => {
+                self.view.move_position(self.size, KeyCode::End)
+            }
+            (KeyCode::Char('f'), KeyModifiers::CONTROL) => {
+                self.view.scroll_screen(self.size, KeyCode::PageDown)
+            }
+            (KeyCode::Char('b'), KeyModifiers::CONTROL) => {
+                self.view.scroll_screen(self.size, KeyCode::PageUp)
+            }
             _ => (),
         }
     }
@@ -154,24 +172,24 @@ impl Editor {
         self.print_bottom("[ insert ]");
         loop {
             self.refresh_screen();
-            if let Ok(Key(KeyEvent {
+            if let Ok(Event::Key(KeyEvent {
                 code,
                 modifiers,
                 kind: crossterm::event::KeyEventKind::Press,
                 ..
-            })) = read()
+            })) = Terminal::read_event()
             {
                 match (code, modifiers) {
-                    (Esc, _) => break,
-                    (Char(c), KeyModifiers::NONE | KeyModifiers::SHIFT) => {
+                    (KeyCode::Esc, _) => break,
+                    (KeyCode::Char(c), KeyModifiers::NONE | KeyModifiers::SHIFT) => {
                         self.view.insert_char(self.size, c);
                         self.insert_message(&c.to_string());
                     }
-                    (Tab, KeyModifiers::NONE) => {
+                    (KeyCode::Tab, KeyModifiers::NONE) => {
                         self.view.insert_char(self.size, '\t');
                         self.insert_message("Tab");
                     }
-                    (Enter, KeyModifiers::NONE) => {
+                    (KeyCode::Enter, KeyModifiers::NONE) => {
                         self.view.insert_char(self.size, '\n');
                         self.insert_message("Enter");
                     }
@@ -183,7 +201,7 @@ impl Editor {
                         // just detect if the caret is at the beginning of the buffer
                         // so we don't need to use caret_screen_position() here
                         if self.view.position.col > 0 || self.view.position.row > 0 {
-                            self.view.move_position(self.size, Left);
+                            self.view.move_position(self.size, KeyCode::Left);
                             self.view.remove_char();
                             self.insert_message("Backspace");
                         }
