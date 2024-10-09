@@ -18,7 +18,10 @@ pub struct Line {
 impl Line {
     pub fn from(string: &str) -> Self {
         debug_assert!(string.is_empty() || string.lines().count() == 1);
-        let mut line = Self { string: String::from(string), ..Default::default() };
+        let mut line = Self {
+            string: String::from(string),
+            ..Self::default()
+        };
         line.rebuild_fragments();
         line
     }

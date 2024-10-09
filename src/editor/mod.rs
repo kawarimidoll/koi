@@ -121,28 +121,28 @@ impl Editor {
                 self.view.move_position(self.size, code);
             }
             (KeyCode::Char('h'), KeyModifiers::NONE) => {
-                self.view.move_position(self.size, KeyCode::Left)
+                self.view.move_position(self.size, KeyCode::Left);
             }
             (KeyCode::Char('H'), KeyModifiers::SHIFT) => {
-                self.view.move_position(self.size, KeyCode::Home)
+                self.view.move_position(self.size, KeyCode::Home);
             }
             (KeyCode::Char('j'), KeyModifiers::NONE) => {
-                self.view.move_position(self.size, KeyCode::Down)
+                self.view.move_position(self.size, KeyCode::Down);
             }
             (KeyCode::Char('k'), KeyModifiers::NONE) => {
-                self.view.move_position(self.size, KeyCode::Up)
+                self.view.move_position(self.size, KeyCode::Up);
             }
             (KeyCode::Char('l'), KeyModifiers::NONE) => {
-                self.view.move_position(self.size, KeyCode::Right)
+                self.view.move_position(self.size, KeyCode::Right);
             }
             (KeyCode::Char('L'), KeyModifiers::SHIFT) => {
-                self.view.move_position(self.size, KeyCode::End)
+                self.view.move_position(self.size, KeyCode::End);
             }
             (KeyCode::Char('f'), KeyModifiers::CONTROL) => {
-                self.view.scroll_screen(self.size, KeyCode::PageDown)
+                self.view.scroll_screen(self.size, KeyCode::PageDown);
             }
             (KeyCode::Char('b'), KeyModifiers::CONTROL) => {
-                self.view.scroll_screen(self.size, KeyCode::PageUp)
+                self.view.scroll_screen(self.size, KeyCode::PageUp);
             }
             _ => (),
         }
