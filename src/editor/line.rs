@@ -19,25 +19,24 @@ pub struct Line {
 impl Line {
     pub fn from(string: &str) -> Self {
         debug_assert!(string.is_empty() || string.lines().count() == 1);
-        let (fragments, col_width) = Self::string_to_fragments(string);
-        Self {
-            fragments,
-            string: String::from(string),
-            col_width,
-        }
+        let mut line = Self::default();
+        line.string = String::from(string);
+        line.rebuild_fragments();
+        line
     }
-    fn string_to_fragments(string: &str) -> (Vec<TextFragment>, usize) {
-        let mut left_width = 0;
-        let fragments = string
+    fn rebuild_fragments(&mut self) {
+        let mut left_col_width = 0;
+        self.fragments = self
+            .string
             .graphemes(true)
             .map(|grapheme| {
-                let fragment = TextFragment::new(grapheme, left_width);
-                left_width = left_width.saturating_add(fragment.width());
+                let fragment = TextFragment::new(grapheme, left_col_width);
+                left_col_width = left_col_width.saturating_add(fragment.width());
                 fragment
             })
             .collect();
 
-        (fragments, left_width)
+        self.col_width = left_col_width;
     }
     pub fn content(&self) -> &str {
         &self.string
@@ -141,9 +140,7 @@ impl Line {
             }
         }
         let remainder = self.string.split_off(byte_len);
-        let (fragments, col_width) = Self::string_to_fragments(&self.string);
-        self.fragments = fragments;
-        self.col_width = col_width;
+        self.rebuild_fragments();
         Self::from(&remainder)
     }
     pub fn insert(&mut self, at_col_idx: usize, string: &str) {
@@ -177,9 +174,8 @@ impl Line {
         } else {
             self.string.push_str(string);
         }
-        let (fragments, col_width) = Self::string_to_fragments(&self.string);
-        self.fragments = fragments;
-        self.col_width = col_width;
+
+        self.rebuild_fragments();
     }
     pub fn append(&mut self, other: &Self) {
         self.insert(self.col_width(), &other.string);
@@ -202,9 +198,7 @@ impl Line {
                 self.string.drain(start_byte_idx..);
             }
             // TODO: needs performance improvement... obviously not efficient
-            let (fragments, col_width) = Self::string_to_fragments(&self.string);
-            self.fragments = fragments;
-            self.col_width = col_width;
+            self.rebuild_fragments();
             // let diff_width = self
             //     .fragments
             //     .drain(start_grapheme_idx..end_grapheme_idx)
