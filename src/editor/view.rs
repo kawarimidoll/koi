@@ -1,8 +1,8 @@
 use super::buffer::Buffer;
 use super::line::Line;
-use super::terminal::Terminal;
 use super::position::Position;
-use super::size:: Size;
+use super::size::Size;
+use super::terminal::Terminal;
 use super::text_fragment::TextFragment;
 use crossterm::event::KeyCode::{self, Down, End, Home, Left, PageDown, PageUp, Right, Up};
 use std::{cmp::min, io::Error};
@@ -29,7 +29,7 @@ impl View {
         self.caret_snap_on_line().saturating_sub(&self.offset)
     }
     fn caret_snap_on_line(&self) -> Position {
-        let col = if let Some(line) = self.buffer.lines.get(self.position.row) {
+        let col = if let Some(line) = self.buffer.lines.get(self.position.line_idx) {
             if let Some(fragment) = line.get_fragment_by_col_idx(self.position.col) {
                 fragment.left_col_width()
             } else {
@@ -40,17 +40,17 @@ impl View {
         };
 
         Position {
+            line_idx: min(self.position.line_idx, self.buffer.lines.len()),
             col,
-            row: min(self.position.row, self.buffer.lines.len()),
         }
     }
-    pub fn get_line(&self, row: usize) -> Option<&Line> {
-        self.buffer.lines.get(row)
+    pub fn get_line(&self, line_idx: usize) -> Option<&Line> {
+        self.buffer.lines.get(line_idx)
     }
     pub fn get_fragment_by_position(&self, pos: Position) -> Option<&TextFragment> {
         self.buffer
             .lines
-            .get(pos.row)
+            .get(pos.line_idx)
             .and_then(|line| line.get_fragment_by_col_idx(pos.col))
     }
 
@@ -96,21 +96,21 @@ impl View {
         self.offset.col = min(
             self.offset.col.saturating_add(1),
             self.buffer
-                .get_line_col_width(self.position.row)
+                .get_line_col_width(self.position.line_idx)
                 .saturating_add(1)
                 .saturating_sub(size.width),
         );
     }
     fn scroll_up(&mut self, step: usize) {
-        let off_r = self.offset.row;
+        let off_l = self.offset.line_idx;
         self.move_prev_line(step);
-        self.offset.row = off_r.saturating_sub(step);
+        self.offset.line_idx = off_l.saturating_sub(step);
     }
     fn scroll_down(&mut self, size: Size, step: usize) {
-        let off_r = self.offset.row;
+        let off_l = self.offset.line_idx;
         self.move_next_line(step);
-        self.offset.row = min(
-            off_r.saturating_add(step),
+        self.offset.line_idx = min(
+            off_l.saturating_add(step),
             self.buffer
                 .get_lines_count()
                 .saturating_add(1)
@@ -136,15 +136,15 @@ impl View {
         if self.position.col > 0 {
             self.position.col -= 1;
             self.position.col = self.caret_snap_on_line().col;
-        } else if self.position.row > 0 {
+        } else if self.position.line_idx > 0 {
             self.move_prev_line(1);
-            self.position.col = self.buffer.get_line_col_width(self.position.row);
+            self.position.col = self.buffer.get_line_col_width(self.position.line_idx);
         }
     }
     fn move_next_grapheme(&mut self) {
         self.position.col = self.caret_snap_on_line().col;
 
-        let step = if let Some(line) = self.buffer.lines.get(self.position.row) {
+        let step = if let Some(line) = self.buffer.lines.get(self.position.line_idx) {
             if let Some(fragment) = line.get_fragment_by_col_idx(self.position.col) {
                 fragment.width()
             } else {
@@ -154,9 +154,9 @@ impl View {
             0
         };
 
-        if self.position.col < self.buffer.get_line_col_width(self.position.row) {
+        if self.position.col < self.buffer.get_line_col_width(self.position.line_idx) {
             self.position.col = self.position.col.saturating_add(step);
-        } else if self.position.row < self.buffer.get_lines_count() {
+        } else if self.position.line_idx < self.buffer.get_lines_count() {
             self.move_next_line(1);
             self.position.col = 0;
         }
@@ -167,24 +167,24 @@ impl View {
     fn move_next_grapheme_nowrap(&mut self) {
         self.position.col = min(
             self.position.col.saturating_add(1),
-            self.buffer.get_line_col_width(self.position.row),
+            self.buffer.get_line_col_width(self.position.line_idx),
         );
     }
     fn move_prev_line(&mut self, step: usize) {
-        if self.position.row > 0 {
-            self.position.row = self.position.row.saturating_sub(step);
+        if self.position.line_idx > 0 {
+            self.position.line_idx = self.position.line_idx.saturating_sub(step);
         }
     }
     fn move_next_line(&mut self, step: usize) {
-        if self.position.row < self.buffer.get_lines_count() {
-            self.position.row = min(
-                self.position.row.saturating_add(step),
+        if self.position.line_idx < self.buffer.get_lines_count() {
+            self.position.line_idx = min(
+                self.position.line_idx.saturating_add(step),
                 self.buffer.get_lines_count(),
             );
         }
     }
     fn scroll_into_view(&mut self, size: Size) {
-        let Position { col, row } = self.caret_snap_on_line();
+        let Position { line_idx, col } = self.caret_snap_on_line();
         let Size { width, height } = size;
         // horizontal
         if col < self.offset.col {
@@ -195,11 +195,11 @@ impl View {
             self.buffer.ensure_redraw();
         }
         // vertical
-        if row < self.offset.row {
-            self.offset.row = row;
+        if line_idx < self.offset.line_idx {
+            self.offset.line_idx = line_idx;
             self.buffer.ensure_redraw();
-        } else if row >= self.offset.row.saturating_add(height) {
-            self.offset.row = row.saturating_add(1).saturating_sub(height);
+        } else if line_idx >= self.offset.line_idx.saturating_add(height) {
+            self.offset.line_idx = line_idx.saturating_add(1).saturating_sub(height);
             self.buffer.ensure_redraw();
         }
     }
@@ -224,9 +224,9 @@ mod tests {
         view.buffer.lines = Buffer::gen_lines("a\nb\n");
         view.position = Position::new(1, 1);
         view.move_position(size, Left);
-        assert_eq!(view.caret_screen_position(), Position::new(0, 1)); // wrap
+        assert_eq!(view.caret_screen_position(), Position::new(1, 0)); // wrap
         view.move_position(size, Left);
-        assert_eq!(view.caret_screen_position(), Position::new(1, 0));
+        assert_eq!(view.caret_screen_position(), Position::new(0, 1));
         view.move_position(size, Left);
         assert_eq!(view.caret_screen_position(), Position::new(0, 0));
         view.move_position(size, Left);
@@ -234,23 +234,23 @@ mod tests {
 
         // test for full-width character
         view.buffer.lines = Buffer::gen_lines("aあbい\nうcえd\n");
-        view.position = Position::new(6, 1);
+        view.position = Position::new(1, 6);
         view.move_position(size, Left);
-        assert_eq!(view.caret_screen_position(), Position::new(5, 1));
+        assert_eq!(view.caret_screen_position(), Position::new(1, 5));
         view.move_position(size, Left);
-        assert_eq!(view.caret_screen_position(), Position::new(3, 1));
+        assert_eq!(view.caret_screen_position(), Position::new(1, 3));
         view.move_position(size, Left);
-        assert_eq!(view.caret_screen_position(), Position::new(2, 1));
-        view.move_position(size, Left);
-        assert_eq!(view.caret_screen_position(), Position::new(0, 1));
-        view.move_position(size, Left);
-        assert_eq!(view.caret_screen_position(), Position::new(6, 0));
-        view.move_position(size, Left);
-        assert_eq!(view.caret_screen_position(), Position::new(4, 0));
-        view.move_position(size, Left);
-        assert_eq!(view.caret_screen_position(), Position::new(3, 0));
+        assert_eq!(view.caret_screen_position(), Position::new(1, 2));
         view.move_position(size, Left);
         assert_eq!(view.caret_screen_position(), Position::new(1, 0));
+        view.move_position(size, Left);
+        assert_eq!(view.caret_screen_position(), Position::new(0, 6));
+        view.move_position(size, Left);
+        assert_eq!(view.caret_screen_position(), Position::new(0, 4));
+        view.move_position(size, Left);
+        assert_eq!(view.caret_screen_position(), Position::new(0, 3));
+        view.move_position(size, Left);
+        assert_eq!(view.caret_screen_position(), Position::new(0, 1));
         view.move_position(size, Left);
         assert_eq!(view.caret_screen_position(), Position::new(0, 0));
     }
@@ -261,37 +261,37 @@ mod tests {
         let size = Size::new(10, 10);
         view.buffer.lines = Buffer::gen_lines("a\nb\n");
         view.move_position(size, Right);
-        assert_eq!(view.caret_screen_position(), Position::new(1, 0));
-        view.move_position(size, Right);
         assert_eq!(view.caret_screen_position(), Position::new(0, 1));
+        view.move_position(size, Right);
+        assert_eq!(view.caret_screen_position(), Position::new(1, 0));
         view.move_position(size, Right);
         assert_eq!(view.caret_screen_position(), Position::new(1, 1)); // wrap
         view.move_position(size, Right);
-        assert_eq!(view.caret_screen_position(), Position::new(0, 2));
+        assert_eq!(view.caret_screen_position(), Position::new(2, 0));
         view.move_position(size, Right);
-        assert_eq!(view.caret_screen_position(), Position::new(0, 2)); // boundary
+        assert_eq!(view.caret_screen_position(), Position::new(2, 0)); // boundary
 
         // test for full-width character
         view.buffer.lines = Buffer::gen_lines("aあbい\nうcえd\n");
         view.position = Position::default();
         view.move_position(size, Right);
-        assert_eq!(view.caret_screen_position(), Position::new(1, 0));
-        view.move_position(size, Right);
-        assert_eq!(view.caret_screen_position(), Position::new(3, 0));
-        view.move_position(size, Right);
-        assert_eq!(view.caret_screen_position(), Position::new(4, 0));
-        view.move_position(size, Right);
-        assert_eq!(view.caret_screen_position(), Position::new(6, 0));
-        view.move_position(size, Right);
         assert_eq!(view.caret_screen_position(), Position::new(0, 1));
         view.move_position(size, Right);
-        assert_eq!(view.caret_screen_position(), Position::new(2, 1));
+        assert_eq!(view.caret_screen_position(), Position::new(0, 3));
         view.move_position(size, Right);
-        assert_eq!(view.caret_screen_position(), Position::new(3, 1));
+        assert_eq!(view.caret_screen_position(), Position::new(0, 4));
         view.move_position(size, Right);
-        assert_eq!(view.caret_screen_position(), Position::new(5, 1));
+        assert_eq!(view.caret_screen_position(), Position::new(0, 6));
         view.move_position(size, Right);
-        assert_eq!(view.caret_screen_position(), Position::new(6, 1));
+        assert_eq!(view.caret_screen_position(), Position::new(1, 0));
+        view.move_position(size, Right);
+        assert_eq!(view.caret_screen_position(), Position::new(1, 2));
+        view.move_position(size, Right);
+        assert_eq!(view.caret_screen_position(), Position::new(1, 3));
+        view.move_position(size, Right);
+        assert_eq!(view.caret_screen_position(), Position::new(1, 5));
+        view.move_position(size, Right);
+        assert_eq!(view.caret_screen_position(), Position::new(1, 6));
     }
 
     #[test]
@@ -299,23 +299,23 @@ mod tests {
         let mut view = View::default();
         let size = Size::new(10, 10);
         view.buffer.lines = Buffer::gen_lines("this\nis\ntest.\n");
-        view.position = Position::new(3, 2);
+        view.position = Position::new(2, 3);
         view.move_position(size, Up);
-        assert_eq!(view.caret_screen_position(), Position::new(2, 1)); // snap
+        assert_eq!(view.caret_screen_position(), Position::new(1, 2)); // snap
         view.move_position(size, Up);
-        assert_eq!(view.caret_screen_position(), Position::new(3, 0));
+        assert_eq!(view.caret_screen_position(), Position::new(0, 3));
         view.move_position(size, Up);
-        assert_eq!(view.caret_screen_position(), Position::new(3, 0)); // boundary
+        assert_eq!(view.caret_screen_position(), Position::new(0, 3)); // boundary
 
         // test for full-width character
         view.buffer.lines = Buffer::gen_lines("aあ\nいb\ncう\nえe\n");
-        view.position = Position::new(2, 3);
-        view.move_position(size, Up);
-        assert_eq!(view.caret_screen_position(), Position::new(1, 2));
+        view.position = Position::new(3, 2);
         view.move_position(size, Up);
         assert_eq!(view.caret_screen_position(), Position::new(2, 1));
         view.move_position(size, Up);
-        assert_eq!(view.caret_screen_position(), Position::new(1, 0));
+        assert_eq!(view.caret_screen_position(), Position::new(1, 2));
+        view.move_position(size, Up);
+        assert_eq!(view.caret_screen_position(), Position::new(0, 1));
     }
 
     #[test]
@@ -323,25 +323,25 @@ mod tests {
         let mut view = View::default();
         let size = Size::new(10, 10);
         view.buffer.lines = Buffer::gen_lines("this\nis\ntest.\n");
-        view.position = Position::new(3, 0);
+        view.position = Position::new(0, 3);
         view.move_position(size, Down);
-        assert_eq!(view.caret_screen_position(), Position::new(2, 1)); // snap
+        assert_eq!(view.caret_screen_position(), Position::new(1, 2)); // snap
         view.move_position(size, Down);
-        assert_eq!(view.caret_screen_position(), Position::new(3, 2));
+        assert_eq!(view.caret_screen_position(), Position::new(2, 3));
         view.move_position(size, Down);
-        assert_eq!(view.caret_screen_position(), Position::new(0, 3));
+        assert_eq!(view.caret_screen_position(), Position::new(3, 0));
         view.move_position(size, Down);
-        assert_eq!(view.caret_screen_position(), Position::new(0, 3)); // boundary
+        assert_eq!(view.caret_screen_position(), Position::new(3, 0)); // boundary
 
         // test for full-width character
         view.buffer.lines = Buffer::gen_lines("aあ\nいb\ncう\nえe\n");
-        view.position = Position::new(1, 0);
+        view.position = Position::new(0, 1);
         view.move_position(size, Down);
-        assert_eq!(view.caret_screen_position(), Position::new(0, 1));
+        assert_eq!(view.caret_screen_position(), Position::new(1, 0));
         view.move_position(size, Down);
-        assert_eq!(view.caret_screen_position(), Position::new(1, 2));
+        assert_eq!(view.caret_screen_position(), Position::new(2, 1));
         view.move_position(size, Down);
-        assert_eq!(view.caret_screen_position(), Position::new(0, 3));
+        assert_eq!(view.caret_screen_position(), Position::new(3, 0));
     }
 
     #[test]
@@ -351,16 +351,16 @@ mod tests {
         view.buffer.lines = Buffer::gen_lines("ab\ncd\n");
         view.scroll_screen(size, Down);
         assert_eq!(view.caret_screen_position(), Position::new(0, 0));
-        assert_eq!(view.offset, Position::new(0, 1));
+        assert_eq!(view.offset, Position::new(1, 0));
         assert_eq!(view.buffer.needs_redraw, true);
         view.buffer.needs_redraw = false;
         view.scroll_screen(size, Down);
-        assert_eq!(view.caret_screen_position(), Position::new(0, 1));
-        assert_eq!(view.offset, Position::new(0, 1));
+        assert_eq!(view.caret_screen_position(), Position::new(1, 0));
+        assert_eq!(view.offset, Position::new(1, 0));
         assert_eq!(view.buffer.needs_redraw, false);
         view.buffer.needs_redraw = false;
         view.scroll_screen(size, Up);
-        assert_eq!(view.caret_screen_position(), Position::new(0, 1));
+        assert_eq!(view.caret_screen_position(), Position::new(1, 0));
         assert_eq!(view.offset, Position::new(0, 0));
         assert_eq!(view.buffer.needs_redraw, true);
         view.buffer.needs_redraw = false;
@@ -372,16 +372,16 @@ mod tests {
 
         view.scroll_screen(size, Right);
         assert_eq!(view.caret_screen_position(), Position::new(0, 0));
-        assert_eq!(view.offset, Position::new(1, 0));
+        assert_eq!(view.offset, Position::new(0, 1));
         assert_eq!(view.buffer.needs_redraw, true);
         view.buffer.needs_redraw = false;
         view.scroll_screen(size, Right);
-        assert_eq!(view.caret_screen_position(), Position::new(1, 0));
-        assert_eq!(view.offset, Position::new(1, 0));
+        assert_eq!(view.caret_screen_position(), Position::new(0, 1));
+        assert_eq!(view.offset, Position::new(0, 1));
         assert_eq!(view.buffer.needs_redraw, false);
         view.buffer.needs_redraw = false;
         view.scroll_screen(size, Left);
-        assert_eq!(view.caret_screen_position(), Position::new(1, 0));
+        assert_eq!(view.caret_screen_position(), Position::new(0, 1));
         assert_eq!(view.offset, Position::new(0, 0));
         assert_eq!(view.buffer.needs_redraw, true);
         view.buffer.needs_redraw = false;
@@ -397,24 +397,45 @@ mod tests {
         let mut view = View::default();
         let size = Size::new(10, 10);
         view.buffer.lines = Buffer::gen_lines("this\nis\ntest.\n");
-        view.position = Position { col: 1, row: 0 };
+        view.position = Position {
+            col: 1,
+            line_idx: 0,
+        };
         view.insert_char(size, 'o');
         assert_eq!(view.buffer.lines[0].content(), "tohis");
-        assert_eq!(view.position, Position { col: 2, row: 0 });
+        assert_eq!(
+            view.position,
+            Position {
+                col: 2,
+                line_idx: 0
+            }
+        );
         view.insert_char(size, '\n');
         assert_eq!(view.buffer.lines[0].content(), "to");
         assert_eq!(view.buffer.lines[1].content(), "his");
-        assert_eq!(view.position, Position { col: 0, row: 1 });
+        assert_eq!(
+            view.position,
+            Position {
+                col: 0,
+                line_idx: 1
+            }
+        );
     }
 
     #[test]
     fn test_remove_char() {
         let mut view = View::default();
         view.buffer.lines = Buffer::gen_lines("this\nis\ntest.\n");
-        view.position = Position { col: 1, row: 0 };
+        view.position = Position {
+            col: 1,
+            line_idx: 0,
+        };
         view.remove_char();
         assert_eq!(view.buffer.lines[0].content(), "tis");
-        view.position = Position { col: 3, row: 0 };
+        view.position = Position {
+            col: 3,
+            line_idx: 0,
+        };
         view.remove_char();
         assert_eq!(view.buffer.lines[0].content(), "tisis");
     }

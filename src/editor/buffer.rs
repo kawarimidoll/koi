@@ -46,7 +46,7 @@ impl Buffer {
             return Ok(());
         }
         let Size { width, height } = size;
-        let top = offset.row;
+        let top = offset.line_idx;
         let left = offset.col;
         let right = left.saturating_add(width);
         for current_row in 0..height.saturating_sub(1) {
@@ -63,29 +63,29 @@ impl Buffer {
         self.needs_redraw = false;
         Ok(())
     }
-    pub fn get_line_col_width(&self, row: usize) -> usize {
-        self.lines.get(row).map_or(0, Line::col_width)
+    pub fn get_line_col_width(&self, line_idx: usize) -> usize {
+        self.lines.get(line_idx).map_or(0, Line::col_width)
     }
     pub fn get_lines_count(&self) -> usize {
         self.lines.len()
     }
 
     pub fn insert(&mut self, str: &str, at: Position) -> bool {
-        let Position { col, row } = at;
+        let Position { line_idx, col } = at;
 
         // out of bounds
-        if row > self.get_lines_count() {
+        if line_idx > self.get_lines_count() {
             return false;
         }
 
         // append a new line
-        if row == self.get_lines_count() {
+        if line_idx == self.get_lines_count() {
             self.lines.push(Line::from(str));
             return true;
         }
 
         // insert a new character in an existing line
-        if let Some(line) = self.lines.get_mut(row) {
+        if let Some(line) = self.lines.get_mut(line_idx) {
             line.insert(col, str);
             return true;
         }
@@ -94,31 +94,31 @@ impl Buffer {
         false
     }
     pub fn insert_newline(&mut self, at: Position) -> bool {
-        let Position { col, row } = at;
-        if row >= self.get_lines_count() {
+        let Position { line_idx, col } = at;
+        if line_idx >= self.get_lines_count() {
             self.lines.push(Line::default());
         } else {
-            // we have a valid row
-            let second_half = self.lines[row].split_off(col);
-            self.lines.insert(row.saturating_add(1), second_half);
+            // we have a valid line_idx
+            let second_half = self.lines[line_idx].split_off(col);
+            self.lines.insert(line_idx.saturating_add(1), second_half);
         }
         true
     }
     pub fn remove_char(&mut self, at: Position) -> bool {
-        let Position { col, row } = at;
+        let Position { line_idx, col } = at;
         // out of bounds
-        if row >= self.get_lines_count() {
+        if line_idx >= self.get_lines_count() {
             return false;
         }
 
-        // below here, we have a valid row
-        if col < self.lines[row].col_width() {
+        // below here, we have a valid line_idx
+        if col < self.lines[line_idx].col_width() {
             // remove a character
-            self.lines[row].remove(col, 1);
-        } else if row < self.get_lines_count().saturating_sub(1) {
+            self.lines[line_idx].remove(col, 1);
+        } else if line_idx < self.get_lines_count().saturating_sub(1) {
             // remove a newline (merge two lines)
-            let next_line = self.lines.remove(row.saturating_add(1));
-            self.lines[row].append(&next_line);
+            let next_line = self.lines.remove(line_idx.saturating_add(1));
+            self.lines[line_idx].append(&next_line);
         } else {
             // the last line, the last character
             return false;
@@ -146,14 +146,32 @@ mod tests {
     fn test_insert() {
         let mut buffer = Buffer::default();
         buffer.lines = Buffer::gen_lines("this\nis\ntest.\n");
-        buffer.insert("ok", Position { col: 1, row: 0 });
+        buffer.insert(
+            "ok",
+            Position {
+                line_idx: 0,
+                col: 1,
+            },
+        );
         assert_eq!(buffer.lines[0].content(), "tokhis");
 
         let mut buffer = Buffer::default();
         buffer.lines = Buffer::gen_lines("qwert");
-        buffer.insert("\t", Position { col: 1, row: 0 });
+        buffer.insert(
+            "\t",
+            Position {
+                line_idx: 0,
+                col: 1,
+            },
+        );
         assert_eq!(buffer.lines[0].content(), "q\twert");
-        buffer.insert("a", Position { col: 4, row: 0 });
+        buffer.insert(
+            "a",
+            Position {
+                line_idx: 0,
+                col: 4,
+            },
+        );
         assert_eq!(buffer.lines[0].content(), "q\tawert");
     }
 
@@ -161,15 +179,24 @@ mod tests {
     fn test_insert_newline() {
         let mut buffer = Buffer::default();
         buffer.lines = Buffer::gen_lines("this\nis\ntest.\n");
-        buffer.insert_newline(Position { col: 0, row: 1 });
+        buffer.insert_newline(Position {
+            line_idx: 1,
+            col: 0,
+        });
         assert_eq!(buffer.lines.len(), 4);
         assert_eq!(buffer.lines[1].content(), "");
         assert_eq!(buffer.lines[2].content(), "is");
-        buffer.insert_newline(Position { col: 2, row: 2 });
+        buffer.insert_newline(Position {
+            line_idx: 2,
+            col: 2,
+        });
         assert_eq!(buffer.lines.len(), 5);
         assert_eq!(buffer.lines[2].content(), "is");
         assert_eq!(buffer.lines[3].content(), "");
-        buffer.insert_newline(Position { col: 1, row: 2 });
+        buffer.insert_newline(Position {
+            line_idx: 2,
+            col: 1,
+        });
         assert_eq!(buffer.lines.len(), 6);
         assert_eq!(buffer.lines[2].content(), "i");
         assert_eq!(buffer.lines[3].content(), "s");
@@ -179,10 +206,16 @@ mod tests {
     fn test_remove_char() {
         let mut buffer = Buffer::default();
         buffer.lines = Buffer::gen_lines("this\nis\ntest.\n");
-        buffer.remove_char(Position { col: 0, row: 1 });
+        buffer.remove_char(Position {
+            line_idx: 1,
+            col: 0,
+        });
         assert_eq!(buffer.lines.len(), 3);
         assert_eq!(buffer.lines[1].content(), "s");
-        buffer.remove_char(Position { col: 1, row: 1 });
+        buffer.remove_char(Position {
+            line_idx: 1,
+            col: 1,
+        });
         assert_eq!(buffer.lines.len(), 2);
         assert_eq!(buffer.lines[1].content(), "stest.");
     }
