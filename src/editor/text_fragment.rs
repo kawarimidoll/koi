@@ -66,7 +66,6 @@ impl TextFragment {
             }
         }
     }
-    #[allow(dead_code)]
     pub fn grapheme(&self) -> &str {
         &self.grapheme
     }
@@ -79,10 +78,9 @@ impl TextFragment {
     pub fn left_col_width(&self) -> usize {
         self.left_col_width
     }
-    #[allow(dead_code)]
-    pub fn replacement(&self) -> Option<&str> {
-        self.replacement.as_deref()
-    }
+    // pub fn replacement(&self) -> Option<&str> {
+    //     self.replacement.as_deref()
+    // }
 }
 
 impl fmt::Display for TextFragment {

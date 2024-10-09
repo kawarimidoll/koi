@@ -15,7 +15,6 @@ pub struct Line {
     col_width: usize,
 }
 
-#[allow(dead_code)]
 impl Line {
     pub fn from(string: &str) -> Self {
         debug_assert!(string.is_empty() || string.lines().count() == 1);
@@ -44,6 +43,7 @@ impl Line {
     pub fn grapheme_count(&self) -> usize {
         self.fragments.len()
     }
+    #[cfg(test)]
     pub fn get_str(&self) -> String {
         self.get_str_by_col_range(0..self.col_width)
     }
@@ -99,6 +99,7 @@ impl Line {
         }
         None
     }
+    #[cfg(test)]
     pub fn grapheme_idx_to_col_idx(&self, grapheme_idx: usize) -> usize {
         self.fragments
             .iter()
@@ -106,6 +107,7 @@ impl Line {
             .map(TextFragment::width)
             .sum()
     }
+    #[cfg(test)]
     pub fn col_idx_to_grapheme_idx(&self, col_idx: usize) -> usize {
         let mut acc: usize = 0;
         let mut grapheme_idx: usize = 0;

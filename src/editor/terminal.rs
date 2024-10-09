@@ -15,7 +15,7 @@ pub struct Size {
     pub height: usize,
 }
 impl Size {
-    #[allow(dead_code)]
+    #[cfg(test)]
     pub fn new(width: usize, height: usize) -> Self {
         Self { width, height }
     }
@@ -26,7 +26,7 @@ pub struct Position {
     pub row: usize,
 }
 impl Position {
-    #[allow(dead_code)]
+    #[cfg(test)]
     pub fn new(col: usize, row: usize) -> Self {
         Self { col, row }
     }
