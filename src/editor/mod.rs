@@ -51,11 +51,7 @@ impl Editor {
             }
             match Terminal::read_event() {
                 Ok(Event::Key(KeyEvent {
-                    code,
-                    modifiers,
-                    // necessary for windows
-                    kind: crossterm::event::KeyEventKind::Press,
-                    ..
+                    code, modifiers, ..
                 })) => {
                     self.handle_key_event(code, modifiers);
                     self.print_bottom(&format!(
@@ -174,10 +170,7 @@ impl Editor {
         loop {
             self.refresh_screen();
             if let Ok(Event::Key(KeyEvent {
-                code,
-                modifiers,
-                kind: crossterm::event::KeyEventKind::Press,
-                ..
+                code, modifiers, ..
             })) = Terminal::read_event()
             {
                 match (code, modifiers) {

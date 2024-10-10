@@ -3,9 +3,8 @@ use super::cursor::Cursor;
 use super::line::Line;
 use super::position::Position;
 use super::size::Size;
-use super::terminal::Terminal;
 use super::text_fragment::TextFragment;
-use crossterm::event::KeyCode::{self, Down, End, Home, Left, PageDown, PageUp, Right, Up};
+use super::terminal::{KeyCode, Terminal};
 use std::{cmp::min, io::Error};
 
 #[derive(Default)]
@@ -43,13 +42,13 @@ impl View {
         if c == '\n' {
             if self.buffer.insert_newline(self.cursor.position()) {
                 self.ensure_redraw();
-                self.move_position(size, Right);
+                self.move_position(size, KeyCode::Right);
             }
             return;
         }
         if self.buffer.insert(&c.to_string(), self.cursor.position()) {
             self.ensure_redraw();
-            self.move_position(size, Right);
+            self.move_position(size, KeyCode::Right);
         }
     }
     pub fn remove_char(&mut self) {
@@ -61,12 +60,12 @@ impl View {
     pub fn scroll_screen(&mut self, size: Size, code: KeyCode) {
         let saved_offset = self.offset;
         match code {
-            Left => self.scroll_left(),
-            Right => self.scroll_right(size),
-            Up => self.scroll_up(1),
-            Down => self.scroll_down(size, 1),
-            PageUp => self.scroll_up(size.height),
-            PageDown => self.scroll_down(size, size.height),
+            KeyCode::Left => self.scroll_left(),
+            KeyCode::Right => self.scroll_right(size),
+            KeyCode::Up => self.scroll_up(1),
+            KeyCode::Down => self.scroll_down(size, 1),
+            KeyCode::PageUp => self.scroll_up(size.height),
+            KeyCode::PageDown => self.scroll_down(size, size.height),
             _ => (),
         };
         self.buffer.needs_redraw = self.offset != saved_offset;
@@ -103,12 +102,12 @@ impl View {
     }
     pub fn move_position(&mut self, size: Size, code: KeyCode) {
         match code {
-            Left => self.cursor.move_prev_grapheme(&self.buffer),
-            Right => self.cursor.move_next_grapheme(&self.buffer),
-            Up => self.cursor.move_prev_line(1, &self.buffer),
-            Down => self.cursor.move_next_line(1, &self.buffer),
-            Home => self.cursor.move_left_edge(&self.buffer),
-            End => self.cursor.move_right_edge(&self.buffer),
+            KeyCode::Left => self.cursor.move_prev_grapheme(&self.buffer),
+            KeyCode::Right => self.cursor.move_next_grapheme(&self.buffer),
+            KeyCode::Up => self.cursor.move_prev_line(1, &self.buffer),
+            KeyCode::Down => self.cursor.move_next_line(1, &self.buffer),
+            KeyCode::Home => self.cursor.move_left_edge(&self.buffer),
+            KeyCode::End => self.cursor.move_right_edge(&self.buffer),
             _ => (),
         };
         self.scroll_into_view(size);
@@ -152,43 +151,43 @@ mod tests {
         let mut view = View::default();
         let size = Size::new(2, 2);
         view.buffer.lines = Buffer::gen_lines("ab\ncd\n");
-        view.scroll_screen(size, Down);
+        view.scroll_screen(size, KeyCode::Down);
         assert_eq!(view.caret_screen_position(), Position::new(0, 0));
         assert_eq!(view.offset, Position::new(1, 0));
         assert_eq!(view.buffer.needs_redraw, true);
         view.buffer.needs_redraw = false;
-        view.scroll_screen(size, Down);
+        view.scroll_screen(size, KeyCode::Down);
         assert_eq!(view.caret_screen_position(), Position::new(1, 0));
         assert_eq!(view.offset, Position::new(1, 0));
         assert_eq!(view.buffer.needs_redraw, false);
         view.buffer.needs_redraw = false;
-        view.scroll_screen(size, Up);
+        view.scroll_screen(size, KeyCode::Up);
         assert_eq!(view.caret_screen_position(), Position::new(1, 0));
         assert_eq!(view.offset, Position::new(0, 0));
         assert_eq!(view.buffer.needs_redraw, true);
         view.buffer.needs_redraw = false;
-        view.scroll_screen(size, Up);
+        view.scroll_screen(size, KeyCode::Up);
         assert_eq!(view.caret_screen_position(), Position::new(0, 0));
         assert_eq!(view.offset, Position::new(0, 0));
         assert_eq!(view.buffer.needs_redraw, false);
         view.buffer.needs_redraw = false;
 
-        view.scroll_screen(size, Right);
+        view.scroll_screen(size, KeyCode::Right);
         assert_eq!(view.caret_screen_position(), Position::new(0, 0));
         assert_eq!(view.offset, Position::new(0, 1));
         assert_eq!(view.buffer.needs_redraw, true);
         view.buffer.needs_redraw = false;
-        view.scroll_screen(size, Right);
+        view.scroll_screen(size, KeyCode::Right);
         assert_eq!(view.caret_screen_position(), Position::new(0, 1));
         assert_eq!(view.offset, Position::new(0, 1));
         assert_eq!(view.buffer.needs_redraw, false);
         view.buffer.needs_redraw = false;
-        view.scroll_screen(size, Left);
+        view.scroll_screen(size, KeyCode::Left);
         assert_eq!(view.caret_screen_position(), Position::new(0, 1));
         assert_eq!(view.offset, Position::new(0, 0));
         assert_eq!(view.buffer.needs_redraw, true);
         view.buffer.needs_redraw = false;
-        view.scroll_screen(size, Left);
+        view.scroll_screen(size, KeyCode::Left);
         assert_eq!(view.caret_screen_position(), Position::new(0, 0));
         assert_eq!(view.offset, Position::new(0, 0));
         assert_eq!(view.buffer.needs_redraw, false);

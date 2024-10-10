@@ -43,7 +43,21 @@ impl Terminal {
         Self::queue_command(DisableLineWrap)
     }
     pub fn read_event() -> Result<Event, Error> {
-        read()
+        let event = read();
+        match event {
+            Ok(Event::Key(key_event)) => {
+                // necessary for windows
+                if key_event.kind == crossterm::event::KeyEventKind::Press {
+                    event
+                } else {
+                    Err(Error::new(
+                        std::io::ErrorKind::Other,
+                        "Ignore not-press event",
+                    ))
+                }
+            }
+            _ => event,
+        }
     }
     pub fn set_cursor_style(style: CursorStyle) -> Result<(), Error> {
         Self::queue_command(style)
