@@ -60,10 +60,10 @@ impl Editor {
                     self.print_bottom(&format!(
                         "pos: {}, cw: {}, off: {}, [{}], key: {}",
                         self.view.caret_screen_position(),
-                        self.view.position.col_idx,
+                        self.view.cursor.col_want(),
                         self.view.offset,
                         self.view
-                            .get_fragment_by_position(self.view.position)
+                            .get_fragment_by_position(self.view.cursor.position())
                             .map(|fragment| {
                                 format!(
                                     "{}, {}, {}",
@@ -200,7 +200,7 @@ impl Editor {
                     (KeyCode::Backspace, KeyModifiers::NONE) => {
                         // just detect if the caret is at the beginning of the buffer
                         // so we don't need to use caret_screen_position() here
-                        if self.view.position.col_idx > 0 || self.view.position.line_idx > 0 {
+                        if self.view.cursor.col_idx() > 0 || self.view.cursor.line_idx() > 0 {
                             self.view.move_position(self.size, KeyCode::Left);
                             self.view.remove_char();
                             self.insert_message("Backspace");
@@ -215,7 +215,7 @@ impl Editor {
     fn insert_message(&self, input: &str) {
         let line = self
             .view
-            .get_line(self.view.position.line_idx)
+            .get_line(self.view.cursor.line_idx())
             .map_or("no line", line::Line::content);
 
         self.print_bottom(&format!("[ insert ] input: {input}, content: {line}"));
