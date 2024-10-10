@@ -8,6 +8,7 @@ mod position;
 mod size;
 use size::Size;
 use view::View;
+mod cursor;
 mod line;
 mod text_fragment;
 mod view;
