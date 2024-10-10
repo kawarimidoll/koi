@@ -1,35 +1,35 @@
 use super::buffer::Buffer;
 use super::position::Position;
+use super::text_fragment::TextFragment;
 use std::cmp::min;
 
 #[derive(Default)]
 pub struct Cursor {
-    position: Position,
+    line_idx: usize,
+    col_idx: usize,
     col_want: usize,
 }
 
 impl Cursor {
     pub fn set_line_idx(&mut self, line_idx: usize, current_buffer: &Buffer) {
-        self.position.line_idx = min(line_idx, current_buffer.get_lines_count());
+        self.line_idx = min(line_idx, current_buffer.get_lines_count());
     }
     pub fn set_col_idx(&mut self, col_idx: usize, current_buffer: &Buffer) {
         self.col_want = col_idx;
         self.snap_col_idx(current_buffer);
     }
     pub fn snap_col_idx(&mut self, current_buffer: &Buffer) {
-        if self.position.line_idx >= current_buffer.get_lines_count() {
+        if self.line_idx >= current_buffer.get_lines_count() {
             // invalid line_idx
-            self.position.col_idx = 0;
+            self.col_idx = 0;
             return;
         }
 
-        let line = &current_buffer.lines[self.position.line_idx];
-        self.position.col_idx = if let Some(fragment) = line.get_fragment_by_col_idx(self.col_want)
-        {
-            fragment.left_col_width()
-        } else {
-            line.col_width()
-        };
+        let line = &current_buffer.lines[self.line_idx];
+
+        self.col_idx = line
+            .get_fragment_by_col_idx(self.col_want)
+            .map_or_else(|| line.col_width(), TextFragment::left_col_width);
     }
     #[cfg(test)]
     pub fn set_position(&mut self, position: Position, current_buffer: &Buffer) {
@@ -37,16 +37,19 @@ impl Cursor {
         self.set_col_idx(position.col_idx, current_buffer);
     }
     pub fn get_screen_position(&self, offset: &Position) -> Position {
-        self.position.saturating_sub(offset)
+        self.position().saturating_sub(offset)
     }
     pub fn position(&self) -> Position {
-        self.position
+        Position {
+            line_idx: self.line_idx,
+            col_idx: self.col_idx,
+        }
     }
     pub fn line_idx(&self) -> usize {
-        self.position.line_idx
+        self.line_idx
     }
     pub fn col_idx(&self) -> usize {
-        self.position.col_idx
+        self.col_idx
     }
     pub fn col_want(&self) -> usize {
         self.col_want
@@ -58,58 +61,56 @@ impl Cursor {
         self.set_col_idx(usize::MAX, current_buffer);
     }
     pub fn move_prev_grapheme(&mut self, current_buffer: &Buffer) {
-        if self.position.col_idx > 0 {
-            self.set_col_idx(self.position.col_idx.saturating_sub(1), current_buffer);
-        } else if self.position.line_idx > 0 {
+        if self.col_idx > 0 {
+            self.set_col_idx(self.col_idx.saturating_sub(1), current_buffer);
+        } else if self.line_idx > 0 {
             self.move_prev_line(1, current_buffer);
             // shorthand: no need to use set_col_idx
-            self.position.col_idx = current_buffer.get_line_col_width(self.position.line_idx);
-            self.col_want = self.position.col_idx;
+            self.col_idx = current_buffer.get_line_col_width(self.line_idx);
+            self.col_want = self.col_idx;
         }
     }
     pub fn move_next_grapheme(&mut self, current_buffer: &Buffer) {
-        if self.position.line_idx >= current_buffer.lines.len() {
+        if self.line_idx >= current_buffer.lines.len() {
             self.set_col_idx(0, current_buffer);
             return;
         }
-        let line = &current_buffer.lines[self.position.line_idx];
-        let step = if let Some(fragment) = line.get_fragment_by_col_idx(self.position.col_idx) {
-            fragment.width()
-        } else {
-            1
-        };
+        let line = &current_buffer.lines[self.line_idx];
+        let step = line
+            .get_fragment_by_col_idx(self.col_idx)
+            .map_or(1, TextFragment::width);
 
-        if self.position.col_idx < current_buffer.get_line_col_width(self.position.line_idx) {
+        if self.col_idx < current_buffer.get_line_col_width(self.line_idx) {
             // shorthand: no need to use set_col_idx
-            self.position.col_idx = self.position.col_idx.saturating_add(step);
-            self.col_want = self.position.col_idx;
-        } else if self.position.line_idx < current_buffer.get_lines_count() {
+            self.col_idx = self.col_idx.saturating_add(step);
+            self.col_want = self.col_idx;
+        } else if self.line_idx < current_buffer.get_lines_count() {
             self.move_next_line(1, current_buffer);
             // shorthand: no need to use set_col_idx
-            self.position.col_idx = 0;
-            self.col_want = self.position.col_idx;
+            self.col_idx = 0;
+            self.col_want = self.col_idx;
         }
     }
     pub fn move_prev_grapheme_nowrap(&mut self) {
         // shorthand: no need to use set_col_idx
-        self.position.col_idx = self.position.col_idx.saturating_sub(1);
-        self.col_want = self.position.col_idx;
+        self.col_idx = self.col_idx.saturating_sub(1);
+        self.col_want = self.col_idx;
     }
     pub fn move_next_grapheme_nowrap(&mut self, current_buffer: &Buffer) {
         // shorthand: no need to use set_col_idx
-        self.position.col_idx = min(
-            self.position.col_idx.saturating_add(1),
-            current_buffer.get_line_col_width(self.position.line_idx),
+        self.col_idx = min(
+            self.col_idx.saturating_add(1),
+            current_buffer.get_line_col_width(self.line_idx),
         );
-        self.col_want = self.position.col_idx;
+        self.col_want = self.col_idx;
     }
     pub fn move_prev_line(&mut self, step: usize, current_buffer: &Buffer) {
         // shorthand: no need to use set_line_idx
-        self.position.line_idx = self.position.line_idx.saturating_sub(step);
+        self.line_idx = self.line_idx.saturating_sub(step);
         self.snap_col_idx(current_buffer);
     }
     pub fn move_next_line(&mut self, step: usize, current_buffer: &Buffer) {
-        self.set_line_idx(self.position.line_idx.saturating_add(step), current_buffer);
+        self.set_line_idx(self.line_idx.saturating_add(step), current_buffer);
         self.snap_col_idx(current_buffer);
     }
 }
