@@ -148,8 +148,7 @@ mod tests {
 
     #[test]
     fn test_scroll() {
-        let mut buffer = Buffer::default();
-        buffer.lines = Buffer::gen_lines("ab\ncd\n");
+        let buffer = Buffer::from_string("ab\ncd\n");
         let mut view = View::new(buffer);
         let size = Size::new(2, 2);
         view.scroll_screen(size, KeyCode::Down);
@@ -197,8 +196,7 @@ mod tests {
 
     #[test]
     fn test_insert_char() {
-        let mut buffer = Buffer::default();
-        buffer.lines = Buffer::gen_lines("this\nis\ntest.\n");
+        let buffer = Buffer::from_string("this\nis\ntest.\n");
         let mut view = View::new(buffer);
         let size = Size::new(10, 10);
         view.cursor.set_position(Position::new(0, 1), &view.buffer);
@@ -213,8 +211,7 @@ mod tests {
 
     #[test]
     fn test_remove_char() {
-        let mut buffer = Buffer::default();
-        buffer.lines = Buffer::gen_lines("this\nis\ntest.\n");
+        let buffer = Buffer::from_string("this\nis\ntest.\n");
         let mut view = View::new(buffer);
         view.cursor.set_position(Position::new(0, 1), &view.buffer);
         view.remove_char();

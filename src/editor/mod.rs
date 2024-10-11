@@ -257,9 +257,9 @@ mod tests {
 
     #[test]
     fn test_resize() {
-        let mut buffer = Buffer::default();
-        buffer.lines = Buffer::gen_lines("this\nis\ntest.\n");
-        let view = View::new(buffer);
+        let buffer = Buffer::from_string("this\nis\ntest.\n");
+        let size = Size::new(10, 10);
+        let view = View::new(buffer, size);
         let mut editor = Editor {
             should_quit: false,
             views: vec![view],

@@ -17,6 +17,13 @@ impl Buffer {
         }
         buffer
     }
+    #[cfg(test)]
+    pub fn from_string(str: &str) -> Self {
+        let mut buffer = Self::default();
+        buffer.lines = Self::gen_lines(str);
+        buffer.ensure_redraw();
+        buffer
+    }
     pub fn load(filename: &str) -> Result<Vec<Line>, Error> {
         let contents = read_to_string(filename)?;
         Ok(Self::gen_lines(&contents))

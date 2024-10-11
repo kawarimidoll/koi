@@ -133,8 +133,7 @@ mod tests {
 
     #[test]
     fn test_move_prev_grapheme() {
-        let mut buffer = Buffer::default();
-        buffer.lines = Buffer::gen_lines("a\nb\n");
+        let buffer = Buffer::from_string("a\nb\n");
         let mut cursor = Cursor::default();
         cursor.set_position(Position::new(1, 1), &buffer);
         cursor.move_prev_grapheme(&buffer);
@@ -147,7 +146,7 @@ mod tests {
         assert_eq!(cursor.position(), Position::new(0, 0)); // boundary
 
         // test for full-width character
-        buffer.lines = Buffer::gen_lines("aあbい\nうcえd\n");
+        let buffer = Buffer::from_string("aあbい\nうcえd\n");
         cursor.set_position(Position::new(1, 6), &buffer);
         cursor.move_prev_grapheme(&buffer);
         assert_eq!(cursor.position(), Position::new(1, 5));
@@ -171,8 +170,7 @@ mod tests {
 
     #[test]
     fn test_move_next_grapheme() {
-        let mut buffer = Buffer::default();
-        buffer.lines = Buffer::gen_lines("a\nb\n");
+        let buffer = Buffer::from_string("a\nb\n");
         let mut cursor = Cursor::default();
         cursor.move_next_grapheme(&buffer);
         assert_eq!(cursor.position(), Position::new(0, 1));
@@ -186,7 +184,7 @@ mod tests {
         assert_eq!(cursor.position(), Position::new(2, 0)); // boundary
 
         // test for full-width character
-        buffer.lines = Buffer::gen_lines("aあbい\nうcえd\n");
+        let buffer = Buffer::from_string("aあbい\nうcえd\n");
         cursor.set_position(Position::default(), &buffer);
         cursor.move_next_grapheme(&buffer);
         assert_eq!(cursor.position(), Position::new(0, 1));
@@ -210,8 +208,7 @@ mod tests {
 
     #[test]
     fn test_move_prev_line() {
-        let mut buffer = Buffer::default();
-        buffer.lines = Buffer::gen_lines("this\nis\ntest.\n");
+        let buffer = Buffer::from_string("this\nis\ntest.\n");
         let mut cursor = Cursor::default();
         cursor.set_position(Position::new(2, 3), &buffer);
         cursor.move_prev_line(1, &buffer);
@@ -222,7 +219,7 @@ mod tests {
         assert_eq!(cursor.position(), Position::new(0, 3)); // boundary
 
         // test for full-width character
-        buffer.lines = Buffer::gen_lines("aあ\nいb\ncう\nえe\n");
+        let buffer = Buffer::from_string("aあ\nいb\ncう\nえe\n");
         cursor.set_position(Position::new(3, 2), &buffer);
         cursor.move_prev_line(1, &buffer);
         assert_eq!(cursor.position(), Position::new(2, 1));
@@ -234,8 +231,7 @@ mod tests {
 
     #[test]
     fn test_move_next_line() {
-        let mut buffer = Buffer::default();
-        buffer.lines = Buffer::gen_lines("this\nis\ntest.\n");
+        let buffer = Buffer::from_string("this\nis\ntest.\n");
         let mut cursor = Cursor::default();
         cursor.set_position(Position::new(0, 3), &buffer);
         cursor.move_next_line(1, &buffer);
@@ -248,7 +244,7 @@ mod tests {
         assert_eq!(cursor.position(), Position::new(3, 0)); // boundary
 
         // test for full-width character
-        buffer.lines = Buffer::gen_lines("aあ\nいb\ncう\nえe\n");
+        let buffer = Buffer::from_string("aあ\nいb\ncう\nえe\n");
         cursor.set_position(Position::new(0, 1), &buffer);
         cursor.move_next_line(1, &buffer);
         assert_eq!(cursor.position(), Position::new(1, 0));
