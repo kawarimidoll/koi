@@ -55,9 +55,9 @@ impl Editor {
                 })) => {
                     self.handle_key_event(code, modifiers);
                     self.print_bottom(&format!(
-                        "pos: {}, cw: {}, off: {}, [{}], key: {}",
+                        "cursor: {}, screen: {}, off: {}, [{}], key: {}",
+                        self.view.cursor,
                         self.view.caret_screen_position(),
-                        self.view.cursor.col_want(),
                         self.view.offset,
                         self.view
                             .get_fragment_by_position(self.view.cursor.position())

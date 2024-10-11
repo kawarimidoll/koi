@@ -1,7 +1,7 @@
 use super::buffer::Buffer;
 use super::position::Position;
 use super::text_fragment::TextFragment;
-use std::cmp::min;
+use std::{cmp::min, fmt};
 
 #[derive(Default)]
 pub struct Cursor {
@@ -112,6 +112,18 @@ impl Cursor {
     pub fn move_next_line(&mut self, step: usize, current_buffer: &Buffer) {
         self.set_line_idx(self.line_idx.saturating_add(step), current_buffer);
         self.snap_col_idx(current_buffer);
+    }
+}
+
+impl fmt::Display for Cursor {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            formatter,
+            "({}, {}, {})",
+            self.line_idx(),
+            self.col_idx(),
+            self.col_want()
+        )
     }
 }
 
