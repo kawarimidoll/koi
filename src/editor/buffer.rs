@@ -12,16 +12,11 @@ pub struct Buffer {
 
 impl Buffer {
     pub fn from_file(filename: &str) -> Self {
-        let mut buffer = Self {
-            lines: Vec::default(),
-            needs_redraw: false,
+        Self {
+            lines: Self::load(filename).unwrap_or_default(),
+            needs_redraw: true,
             filename: Some(filename.to_string()),
-        };
-        if let Ok(lines) = Self::load(filename) {
-            buffer.lines = lines;
-            buffer.ensure_redraw();
         }
-        buffer
     }
     #[cfg(test)]
     pub fn from_string(str: &str) -> Self {
@@ -31,8 +26,7 @@ impl Buffer {
         buffer
     }
     pub fn load(filename: &str) -> Result<Vec<Line>, Error> {
-        let contents = read_to_string(filename)?;
-        Ok(Self::gen_lines(&contents))
+        Ok(Self::gen_lines(&read_to_string(filename)?))
     }
     pub fn gen_lines(src: &str) -> Vec<Line> {
         src.lines().map(Line::from).collect()

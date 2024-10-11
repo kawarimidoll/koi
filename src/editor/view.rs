@@ -33,9 +33,7 @@ impl View {
         self.buffer.lines.get(line_idx)
     }
     pub fn get_fragment_by_position(&self, pos: Position) -> Option<&TextFragment> {
-        self.buffer
-            .lines
-            .get(pos.line_idx)
+        self.get_line(pos.line_idx)
             .and_then(|line| line.get_fragment_by_col_idx(pos.col_idx))
     }
 

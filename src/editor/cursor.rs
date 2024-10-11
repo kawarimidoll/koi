@@ -71,7 +71,7 @@ impl Cursor {
         }
     }
     pub fn move_next_grapheme(&mut self, current_buffer: &Buffer) {
-        if self.line_idx >= current_buffer.lines.len() {
+        if self.line_idx >= current_buffer.get_lines_count() {
             self.set_col_idx(0, current_buffer);
             return;
         }
