@@ -174,7 +174,11 @@ impl Editor {
         let height = height16 as usize;
         // let _ = Terminal::print_row(height - 1, &format!("Resize to: {width:?}, {height:?}"));
         self.size = Size { width, height };
-        self.current_view_mut().ensure_redraw();
+        let view_size = Size {
+            width,
+            height: height.saturating_sub(1),
+        };
+        self.current_view_mut().set_size(view_size);
     }
     fn refresh_screen(&mut self) {
         let _ = Terminal::hide_caret();

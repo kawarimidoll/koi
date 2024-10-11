@@ -11,6 +11,7 @@ pub struct Cursor {
 }
 
 impl Cursor {
+    // TODO consider screen size
     pub fn set_line_idx(&mut self, line_idx: usize, current_buffer: &Buffer) {
         self.line_idx = min(line_idx, current_buffer.get_lines_count());
     }

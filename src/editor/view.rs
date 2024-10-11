@@ -26,6 +26,10 @@ impl View {
             buffer,
         }
     }
+    pub fn set_size(&mut self, size: Size) {
+        self.size = size;
+        self.ensure_redraw();
+    }
     pub fn caret_screen_position(&self) -> Position {
         self.cursor.get_screen_position(&self.offset)
     }
