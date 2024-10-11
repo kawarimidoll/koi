@@ -6,11 +6,17 @@ use std::{cmp::min, fs::read_to_string, io::Error};
 pub struct Buffer {
     pub lines: Vec<Line>,
     pub needs_redraw: bool,
+    #[allow(dead_code)]
+    filename: Option<String>,
 }
 
 impl Buffer {
     pub fn from_file(filename: &str) -> Self {
-        let mut buffer = Self::default();
+        let mut buffer = Self {
+            lines: Vec::default(),
+            needs_redraw: false,
+            filename: Some(filename.to_string()),
+        };
         if let Ok(lines) = Self::load(filename) {
             buffer.lines = lines;
             buffer.ensure_redraw();
@@ -130,6 +136,7 @@ impl Default for Buffer {
         Buffer {
             lines: Vec::new(),
             needs_redraw: true,
+            filename: None,
         }
     }
 }
