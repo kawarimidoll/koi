@@ -18,11 +18,11 @@ mod view;
 // 将来的にはEditorは複数のViewとBufferを持つ
 // それぞれのViewはBufferを参照する
 // Editorは現在どのViewにフォーカスしているかの情報を持つ
-#[derive(Default)]
 pub struct Editor {
     should_quit: bool,
     // buffer: Buffer,
-    view: View,
+    views: Vec<View>,
+    current_view_idx: usize,
     size: Size,
 }
 
@@ -35,8 +35,6 @@ impl Editor {
         }));
         Terminal::initialize()?;
 
-        let mut editor = Self::default();
-
         let args: Vec<String> = std::env::args().collect();
         // only load the first file for now
         let buffer = if let Some(first) = args.get(1) {
@@ -45,9 +43,21 @@ impl Editor {
             Buffer::default()
         };
 
-        editor.view = View::new(buffer);
-        editor.size = Terminal::size().unwrap_or_default();
-        Ok(editor)
+        let view = View::new(buffer);
+        let size = Terminal::size().unwrap_or_default();
+        Ok(Self {
+            should_quit: false,
+            views: vec![view],
+            current_view_idx: 0,
+            size,
+        })
+    }
+
+    fn current_view(&self) -> &View {
+        self.views.get(self.current_view_idx).unwrap()
+    }
+    fn current_view_mut(&mut self) -> &mut View {
+        self.views.get_mut(self.current_view_idx).unwrap()
     }
 
     pub fn run(&mut self) {
@@ -66,11 +76,11 @@ impl Editor {
                     self.handle_key_event(code, modifiers);
                     self.print_bottom(&format!(
                         "cursor: {}, screen: {}, off: {}, [{}], key: {}",
-                        self.view.cursor,
-                        self.view.caret_screen_position(),
-                        self.view.offset,
-                        self.view
-                            .get_fragment_by_position(self.view.cursor.position())
+                        self.current_view().cursor,
+                        self.current_view().caret_screen_position(),
+                        self.current_view().offset,
+                        self.current_view()
+                            .get_fragment_by_position(self.current_view().cursor.position())
                             .map(|fragment| {
                                 format!(
                                     "{}, {}, {}",
@@ -103,18 +113,19 @@ impl Editor {
     }
 
     fn handle_key_event(&mut self, code: KeyCode, modifiers: KeyModifiers) {
+        let size = self.size;
         match (code, modifiers) {
             (KeyCode::Char('q'), KeyModifiers::NONE) => self.should_quit = true,
             (KeyCode::Char('i'), KeyModifiers::NONE) => self.insert_loop(),
             (KeyCode::Char('a'), KeyModifiers::NONE) => {
-                self.view.move_position(self.size, KeyCode::Right);
+                self.current_view_mut().move_position(size, KeyCode::Right);
                 self.insert_loop();
             }
-            (KeyCode::Char('x'), KeyModifiers::NONE) => self.view.remove_char(),
+            (KeyCode::Char('x'), KeyModifiers::NONE) => self.current_view_mut().remove_char(),
 
             (KeyCode::Left | KeyCode::Down | KeyCode::Right | KeyCode::Up, KeyModifiers::SHIFT)
             | (KeyCode::PageDown | KeyCode::PageUp, KeyModifiers::NONE) => {
-                self.view.scroll_screen(self.size, code);
+                self.current_view_mut().scroll_screen(size, code);
             }
             (
                 KeyCode::Left
@@ -125,31 +136,32 @@ impl Editor {
                 | KeyCode::End,
                 KeyModifiers::NONE,
             ) => {
-                self.view.move_position(self.size, code);
+                self.current_view_mut().move_position(size, code);
             }
             (KeyCode::Char('h'), KeyModifiers::NONE) => {
-                self.view.move_position(self.size, KeyCode::Left);
+                self.current_view_mut().move_position(size, KeyCode::Left);
             }
             (KeyCode::Char('H'), KeyModifiers::SHIFT) => {
-                self.view.move_position(self.size, KeyCode::Home);
+                self.current_view_mut().move_position(size, KeyCode::Home);
             }
             (KeyCode::Char('j'), KeyModifiers::NONE) => {
-                self.view.move_position(self.size, KeyCode::Down);
+                self.current_view_mut().move_position(size, KeyCode::Down);
             }
             (KeyCode::Char('k'), KeyModifiers::NONE) => {
-                self.view.move_position(self.size, KeyCode::Up);
+                self.current_view_mut().move_position(size, KeyCode::Up);
             }
             (KeyCode::Char('l'), KeyModifiers::NONE) => {
-                self.view.move_position(self.size, KeyCode::Right);
+                self.current_view_mut().move_position(size, KeyCode::Right);
             }
             (KeyCode::Char('L'), KeyModifiers::SHIFT) => {
-                self.view.move_position(self.size, KeyCode::End);
+                self.current_view_mut().move_position(size, KeyCode::End);
             }
             (KeyCode::Char('f'), KeyModifiers::CONTROL) => {
-                self.view.scroll_screen(self.size, KeyCode::PageDown);
+                self.current_view_mut()
+                    .scroll_screen(size, KeyCode::PageDown);
             }
             (KeyCode::Char('b'), KeyModifiers::CONTROL) => {
-                self.view.scroll_screen(self.size, KeyCode::PageUp);
+                self.current_view_mut().scroll_screen(size, KeyCode::PageUp);
             }
             _ => (),
         }
@@ -160,17 +172,18 @@ impl Editor {
         let height = height16 as usize;
         // let _ = Terminal::print_row(height - 1, &format!("Resize to: {width:?}, {height:?}"));
         self.size = Size { width, height };
-        self.view.ensure_redraw();
+        self.current_view_mut().ensure_redraw();
     }
     fn refresh_screen(&mut self) {
         let _ = Terminal::hide_caret();
-        let _ = self.view.render(self.size);
+        let size = self.size;
+        let _ = self.current_view_mut().render(size);
         self.move_caret();
         let _ = Terminal::show_caret();
         let _ = Terminal::execute();
     }
     fn move_caret(&self) {
-        Terminal::move_caret_to(self.view.caret_screen_position()).unwrap();
+        Terminal::move_caret_to(self.current_view().caret_screen_position()).unwrap();
     }
 
     // NOTE: easy version
@@ -179,6 +192,7 @@ impl Editor {
         self.print_bottom("[ insert ]");
         loop {
             self.refresh_screen();
+            let size = self.size;
             if let Ok(Event::Key(KeyEvent {
                 code, modifiers, ..
             })) = Terminal::read_event()
@@ -186,27 +200,29 @@ impl Editor {
                 match (code, modifiers) {
                     (KeyCode::Esc, _) => break,
                     (KeyCode::Char(c), KeyModifiers::NONE | KeyModifiers::SHIFT) => {
-                        self.view.insert_char(self.size, c);
+                        self.current_view_mut().insert_char(size, c);
                         self.insert_message(&c.to_string());
                     }
                     (KeyCode::Tab, KeyModifiers::NONE) => {
-                        self.view.insert_char(self.size, '\t');
+                        self.current_view_mut().insert_char(size, '\t');
                         self.insert_message("Tab");
                     }
                     (KeyCode::Enter, KeyModifiers::NONE) => {
-                        self.view.insert_char(self.size, '\n');
+                        self.current_view_mut().insert_char(size, '\n');
                         self.insert_message("Enter");
                     }
                     (KeyCode::Delete, KeyModifiers::NONE) => {
-                        self.view.remove_char();
+                        self.current_view_mut().remove_char();
                         self.insert_message("Delete");
                     }
                     (KeyCode::Backspace, KeyModifiers::NONE) => {
                         // just detect if the caret is at the beginning of the buffer
                         // so we don't need to use caret_screen_position() here
-                        if self.view.cursor.col_idx() > 0 || self.view.cursor.line_idx() > 0 {
-                            self.view.move_position(self.size, KeyCode::Left);
-                            self.view.remove_char();
+                        if self.current_view().cursor.col_idx() > 0
+                            || self.current_view().cursor.line_idx() > 0
+                        {
+                            self.current_view_mut().move_position(size, KeyCode::Left);
+                            self.current_view_mut().remove_char();
                             self.insert_message("Backspace");
                         }
                     }
@@ -218,8 +234,8 @@ impl Editor {
     }
     fn insert_message(&self, input: &str) {
         let line = self
-            .view
-            .get_line(self.view.cursor.line_idx())
+            .current_view()
+            .get_line(self.current_view().cursor.line_idx())
             .map_or("no line", line::Line::content);
 
         self.print_bottom(&format!("[ insert ] input: {input}, content: {line}"));
@@ -241,7 +257,15 @@ mod tests {
 
     #[test]
     fn test_resize() {
-        let mut editor = Editor::default();
+        let mut buffer = Buffer::default();
+        buffer.lines = Buffer::gen_lines("this\nis\ntest.\n");
+        let view = View::new(buffer);
+        let mut editor = Editor {
+            should_quit: false,
+            views: vec![view],
+            current_view_idx: 0,
+            size: Size::default(),
+        };
         assert_eq!(editor.size, Size::default());
         editor.handle_resize_event(10, 10);
         assert_eq!(editor.size, Size::new(10, 10));
