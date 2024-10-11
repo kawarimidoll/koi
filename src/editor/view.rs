@@ -3,11 +3,10 @@ use super::cursor::Cursor;
 use super::line::Line;
 use super::position::Position;
 use super::size::Size;
-use super::text_fragment::TextFragment;
 use super::terminal::{KeyCode, Terminal};
+use super::text_fragment::TextFragment;
 use std::{cmp::min, io::Error};
 
-#[derive(Default)]
 pub struct View {
     pub cursor: Cursor,
     // offset is top-left vertex of the visible buffer
@@ -20,8 +19,9 @@ pub struct View {
 impl View {
     pub fn new(buffer: Buffer) -> Self {
         Self {
+            cursor: Cursor::default(),
+            offset: Position::default(),
             buffer,
-            ..Self::default()
         }
     }
     pub fn caret_screen_position(&self) -> Position {
@@ -148,9 +148,10 @@ mod tests {
 
     #[test]
     fn test_scroll() {
-        let mut view = View::default();
+        let mut buffer = Buffer::default();
+        buffer.lines = Buffer::gen_lines("ab\ncd\n");
+        let mut view = View::new(buffer);
         let size = Size::new(2, 2);
-        view.buffer.lines = Buffer::gen_lines("ab\ncd\n");
         view.scroll_screen(size, KeyCode::Down);
         assert_eq!(view.caret_screen_position(), Position::new(0, 0));
         assert_eq!(view.offset, Position::new(1, 0));
@@ -196,9 +197,10 @@ mod tests {
 
     #[test]
     fn test_insert_char() {
-        let mut view = View::default();
+        let mut buffer = Buffer::default();
+        buffer.lines = Buffer::gen_lines("this\nis\ntest.\n");
+        let mut view = View::new(buffer);
         let size = Size::new(10, 10);
-        view.buffer.lines = Buffer::gen_lines("this\nis\ntest.\n");
         view.cursor.set_position(Position::new(0, 1), &view.buffer);
         view.insert_char(size, 'o');
         assert_eq!(view.buffer.lines[0].content(), "tohis");
@@ -211,8 +213,9 @@ mod tests {
 
     #[test]
     fn test_remove_char() {
-        let mut view = View::default();
-        view.buffer.lines = Buffer::gen_lines("this\nis\ntest.\n");
+        let mut buffer = Buffer::default();
+        buffer.lines = Buffer::gen_lines("this\nis\ntest.\n");
+        let mut view = View::new(buffer);
         view.cursor.set_position(Position::new(0, 1), &view.buffer);
         view.remove_char();
         assert_eq!(view.buffer.lines[0].content(), "tis");
