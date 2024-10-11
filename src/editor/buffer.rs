@@ -54,7 +54,7 @@ impl Buffer {
         let top = offset.line_idx;
         let left = offset.col_idx;
         let right = left.saturating_add(width);
-        for current_row in 0..height.saturating_sub(1) {
+        for current_row in 0..height {
             let current_line = top.saturating_add(current_row);
             if let Some(line) = self.lines.get(current_line) {
                 let end = min(right, line.col_width());
@@ -64,7 +64,6 @@ impl Buffer {
             }
             renderer(current_row, "~")?;
         }
-        // the bottom line is reserved for messages
         self.needs_redraw = false;
         Ok(())
     }

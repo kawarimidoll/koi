@@ -43,8 +43,12 @@ impl Editor {
             Buffer::default()
         };
 
-        let view = View::new(buffer);
         let size = Terminal::size().unwrap_or_default();
+        let view_size = Size {
+            width: size.width,
+            height: size.height.saturating_sub(1),
+        };
+        let view = View::new(buffer, view_size);
         Ok(Self {
             should_quit: false,
             views: vec![view],
@@ -113,19 +117,18 @@ impl Editor {
     }
 
     fn handle_key_event(&mut self, code: KeyCode, modifiers: KeyModifiers) {
-        let size = self.size;
         match (code, modifiers) {
             (KeyCode::Char('q'), KeyModifiers::NONE) => self.should_quit = true,
             (KeyCode::Char('i'), KeyModifiers::NONE) => self.insert_loop(),
             (KeyCode::Char('a'), KeyModifiers::NONE) => {
-                self.current_view_mut().move_position(size, KeyCode::Right);
+                self.current_view_mut().move_position(KeyCode::Right);
                 self.insert_loop();
             }
             (KeyCode::Char('x'), KeyModifiers::NONE) => self.current_view_mut().remove_char(),
 
             (KeyCode::Left | KeyCode::Down | KeyCode::Right | KeyCode::Up, KeyModifiers::SHIFT)
             | (KeyCode::PageDown | KeyCode::PageUp, KeyModifiers::NONE) => {
-                self.current_view_mut().scroll_screen(size, code);
+                self.current_view_mut().scroll_screen(code);
             }
             (
                 KeyCode::Left
@@ -136,32 +139,31 @@ impl Editor {
                 | KeyCode::End,
                 KeyModifiers::NONE,
             ) => {
-                self.current_view_mut().move_position(size, code);
+                self.current_view_mut().move_position(code);
             }
             (KeyCode::Char('h'), KeyModifiers::NONE) => {
-                self.current_view_mut().move_position(size, KeyCode::Left);
+                self.current_view_mut().move_position(KeyCode::Left);
             }
             (KeyCode::Char('H'), KeyModifiers::SHIFT) => {
-                self.current_view_mut().move_position(size, KeyCode::Home);
+                self.current_view_mut().move_position(KeyCode::Home);
             }
             (KeyCode::Char('j'), KeyModifiers::NONE) => {
-                self.current_view_mut().move_position(size, KeyCode::Down);
+                self.current_view_mut().move_position(KeyCode::Down);
             }
             (KeyCode::Char('k'), KeyModifiers::NONE) => {
-                self.current_view_mut().move_position(size, KeyCode::Up);
+                self.current_view_mut().move_position(KeyCode::Up);
             }
             (KeyCode::Char('l'), KeyModifiers::NONE) => {
-                self.current_view_mut().move_position(size, KeyCode::Right);
+                self.current_view_mut().move_position(KeyCode::Right);
             }
             (KeyCode::Char('L'), KeyModifiers::SHIFT) => {
-                self.current_view_mut().move_position(size, KeyCode::End);
+                self.current_view_mut().move_position(KeyCode::End);
             }
             (KeyCode::Char('f'), KeyModifiers::CONTROL) => {
-                self.current_view_mut()
-                    .scroll_screen(size, KeyCode::PageDown);
+                self.current_view_mut().scroll_screen(KeyCode::PageDown);
             }
             (KeyCode::Char('b'), KeyModifiers::CONTROL) => {
-                self.current_view_mut().scroll_screen(size, KeyCode::PageUp);
+                self.current_view_mut().scroll_screen(KeyCode::PageUp);
             }
             _ => (),
         }
@@ -176,8 +178,7 @@ impl Editor {
     }
     fn refresh_screen(&mut self) {
         let _ = Terminal::hide_caret();
-        let size = self.size;
-        let _ = self.current_view_mut().render(size);
+        let _ = self.current_view_mut().render();
         self.move_caret();
         let _ = Terminal::show_caret();
         let _ = Terminal::execute();
@@ -192,7 +193,6 @@ impl Editor {
         self.print_bottom("[ insert ]");
         loop {
             self.refresh_screen();
-            let size = self.size;
             if let Ok(Event::Key(KeyEvent {
                 code, modifiers, ..
             })) = Terminal::read_event()
@@ -200,15 +200,15 @@ impl Editor {
                 match (code, modifiers) {
                     (KeyCode::Esc, _) => break,
                     (KeyCode::Char(c), KeyModifiers::NONE | KeyModifiers::SHIFT) => {
-                        self.current_view_mut().insert_char(size, c);
+                        self.current_view_mut().insert_char(c);
                         self.insert_message(&c.to_string());
                     }
                     (KeyCode::Tab, KeyModifiers::NONE) => {
-                        self.current_view_mut().insert_char(size, '\t');
+                        self.current_view_mut().insert_char('\t');
                         self.insert_message("Tab");
                     }
                     (KeyCode::Enter, KeyModifiers::NONE) => {
-                        self.current_view_mut().insert_char(size, '\n');
+                        self.current_view_mut().insert_char('\n');
                         self.insert_message("Enter");
                     }
                     (KeyCode::Delete, KeyModifiers::NONE) => {
@@ -221,7 +221,7 @@ impl Editor {
                         if self.current_view().cursor.col_idx() > 0
                             || self.current_view().cursor.line_idx() > 0
                         {
-                            self.current_view_mut().move_position(size, KeyCode::Left);
+                            self.current_view_mut().move_position(KeyCode::Left);
                             self.current_view_mut().remove_char();
                             self.insert_message("Backspace");
                         }
