@@ -3,27 +3,19 @@ use super::position::Position;
 use super::size::Size;
 use std::{cmp::min, fs::read_to_string, io::Error};
 
-#[derive(Default)]
 pub struct Buffer {
     pub lines: Vec<Line>,
     pub needs_redraw: bool,
 }
 
 impl Buffer {
-    pub fn new() -> Self {
+    pub fn from_file(filename: &str) -> Self {
         let mut buffer = Self::default();
-        buffer.handle_args();
-        buffer.ensure_redraw();
-        buffer
-    }
-    fn handle_args(&mut self) {
-        let args: Vec<String> = std::env::args().collect();
-        // only load the first file for now
-        if let Some(first) = args.get(1) {
-            if let Ok(lines) = Self::load(first) {
-                self.lines = lines;
-            }
+        if let Ok(lines) = Self::load(filename) {
+            buffer.lines = lines;
+            buffer.ensure_redraw();
         }
+        buffer
     }
     pub fn load(filename: &str) -> Result<Vec<Line>, Error> {
         let contents = read_to_string(filename)?;
@@ -124,6 +116,14 @@ impl Buffer {
             return false;
         }
         true
+    }
+}
+impl Default for Buffer {
+    fn default() -> Self {
+        Buffer {
+            lines: Vec::new(),
+            needs_redraw: true,
+        }
     }
 }
 

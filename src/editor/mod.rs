@@ -2,7 +2,7 @@
 use std::io::Error;
 use terminal::{CursorStyle, Event, KeyCode, KeyEvent, KeyModifiers, Terminal};
 mod terminal;
-// use buffer::Buffer;
+use buffer::Buffer;
 mod buffer;
 mod position;
 mod size;
@@ -34,8 +34,18 @@ impl Editor {
             current_hook(panic_info);
         }));
         Terminal::initialize()?;
+
         let mut editor = Self::default();
-        editor.view = View::new();
+
+        let args: Vec<String> = std::env::args().collect();
+        // only load the first file for now
+        let buffer = if let Some(first) = args.get(1) {
+            Buffer::from_file(first)
+        } else {
+            Buffer::default()
+        };
+
+        editor.view = View::new(buffer);
         editor.size = Terminal::size().unwrap_or_default();
         Ok(editor)
     }

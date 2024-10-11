@@ -18,9 +18,9 @@ pub struct View {
 }
 
 impl View {
-    pub fn new() -> Self {
+    pub fn new(buffer: Buffer) -> Self {
         Self {
-            buffer: Buffer::new(),
+            buffer,
             ..Self::default()
         }
     }
