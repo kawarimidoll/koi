@@ -6,6 +6,8 @@ use buffer::Buffer;
 mod buffer;
 use position::Position;
 mod position;
+use command_bar::CommandBar;
+mod command_bar;
 mod size;
 use size::Size;
 use view::View;
@@ -13,34 +15,11 @@ mod cursor;
 mod line;
 mod text_fragment;
 mod view;
-use unicode_width::UnicodeWidthStr;
 
 pub const NAME: &str = env!("CARGO_PKG_NAME");
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 // TODO tabが含まれる場合の画面端の処理
-
-struct CommandBar {
-    prompt: String,
-    value: String,
-}
-impl CommandBar {
-    pub fn new(prompt: &str) -> Self {
-        Self {
-            prompt: prompt.to_string(),
-            value: String::default(),
-        }
-    }
-    fn insert(&mut self, c: char) {
-        self.value.push(c);
-    }
-    fn delete_backward(&mut self) {
-        self.value.pop();
-    }
-    pub fn value(&self) -> &str {
-        &self.value
-    }
-}
 
 // 将来的にはEditorは複数のViewとBufferを持つ
 // それぞれのViewはBufferを参照する
@@ -236,13 +215,12 @@ impl Editor {
         }
         let _ = Terminal::hide_caret();
         let _ = self.current_view_mut().render();
-        if let Some(command_bar) = &self.command_bar {
+        if self.command_bar.is_some() {
             let bottom_line = self.size.height.saturating_sub(1);
-            let command_text = format!("{}{}", &command_bar.prompt, &command_bar.value);
-            Terminal::print_row(bottom_line, &command_text).unwrap();
-            let command_caret = command_text.width();
+            let command_bar = self.command_bar.as_mut().unwrap();
+            command_bar.render(bottom_line).unwrap();
             Terminal::move_caret_to(Position {
-                col_idx: command_caret,
+                col_idx: command_bar.caret_col,
                 line_idx: bottom_line,
             })
             .unwrap();
