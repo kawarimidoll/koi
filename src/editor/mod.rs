@@ -197,17 +197,21 @@ impl Editor {
 
     fn save(&mut self) {
         if self.current_view().has_filename() {
-            // TODO: handle error
-            let save_result = self.current_view_mut().save();
-            let message = if save_result.is_ok() {
-                "File saved successfully"
-            } else {
-                "Error saving file"
+            let message = match self.current_view_mut().save() {
+                Ok(()) => "File saved successfully",
+                Err(_) => "Error: Saving file failed",
             };
             self.set_message(message);
         } else {
-            // TODO: input filename
+            self.set_message("Error: No file name");
         }
+    }
+    fn save_as(&mut self, filename: &str) {
+        let message = match self.current_view_mut().save_as(filename) {
+            Ok(()) => "File saved successfully",
+            Err(_) => "Error: Saving file failed",
+        };
+        self.set_message(message);
     }
 
     #[allow(clippy::as_conversions)]
@@ -346,7 +350,13 @@ impl Editor {
 
         match command {
             "q" | "quit" => self.should_quit = true,
-            "w" | "write" => self.save(),
+            "w" | "write" => {
+                if args.is_empty() {
+                    self.save();
+                } else {
+                    self.save_as(args);
+                }
+            }
             "echo" => self.set_message(args),
             _ => self.set_message(&format!("Unknown command: {command}")),
         }
