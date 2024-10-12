@@ -13,6 +13,9 @@ mod line;
 mod text_fragment;
 mod view;
 
+pub const NAME: &str = env!("CARGO_PKG_NAME");
+pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+
 // TODO tabが含まれる場合の画面端の処理
 
 // 将来的にはEditorは複数のViewとBufferを持つ
@@ -34,6 +37,7 @@ impl Editor {
             current_hook(panic_info);
         }));
         Terminal::initialize()?;
+        Terminal::set_title(&format!("{NAME} - {VERSION}"))?;
 
         let args: Vec<String> = std::env::args().collect();
         // only load the first file for now

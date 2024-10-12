@@ -7,7 +7,7 @@ pub use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use crossterm::style::Print;
 use crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, size, Clear, ClearType, DisableLineWrap, EnableLineWrap,
-    EnterAlternateScreen, LeaveAlternateScreen,
+    EnterAlternateScreen, LeaveAlternateScreen, SetTitle,
 };
 use crossterm::{queue, Command};
 use std::io::{stdout, Error, Write};
@@ -41,6 +41,9 @@ impl Terminal {
     }
     fn disable_line_wrap() -> Result<(), Error> {
         Self::queue_command(DisableLineWrap)
+    }
+    pub fn set_title(title: &str) -> Result<(), Error> {
+        Self::queue_command(SetTitle(title))
     }
     pub fn read_event() -> Result<Event, Error> {
         let event = read();
