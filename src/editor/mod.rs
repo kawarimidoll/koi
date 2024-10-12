@@ -12,6 +12,7 @@ mod size;
 use size::Size;
 use view::View;
 mod cursor;
+use cursor::Cursor;
 mod line;
 mod text_fragment;
 mod view;
@@ -85,6 +86,7 @@ impl Editor {
     pub fn run(&mut self) {
         self.move_caret();
 
+        let mut last_cursor = Cursor::default();
         loop {
             self.refresh_screen();
             if self.should_quit {
@@ -94,25 +96,28 @@ impl Editor {
                 Ok(Event::Key(KeyEvent {
                     code, modifiers, ..
                 })) => {
-                    self.set_message(&format!(
-                        "cursor: {}, screen: {}, off: {}, [{}], key: {}",
-                        self.current_view().cursor,
-                        self.current_view().caret_screen_position(),
-                        self.current_view().offset,
-                        self.current_view()
-                            .get_fragment_by_position(self.current_view().cursor.position())
-                            .map(|fragment| {
-                                format!(
-                                    "{}, {}, {}",
-                                    fragment,
-                                    fragment.width(),
-                                    fragment.left_col_width()
-                                )
-                            })
-                            .unwrap_or_default(),
-                        code,
-                    ));
                     self.handle_key_event(code, modifiers);
+                    if last_cursor != self.current_view().cursor {
+                        self.set_message(&format!(
+                            "cursor: {}, screen: {}, off: {}, [{}], key: {}",
+                            self.current_view().cursor,
+                            self.current_view().caret_screen_position(),
+                            self.current_view().offset,
+                            self.current_view()
+                                .get_fragment_by_position(self.current_view().cursor.position())
+                                .map(|fragment| {
+                                    format!(
+                                        "{}, {}, {}",
+                                        fragment,
+                                        fragment.width(),
+                                        fragment.left_col_width()
+                                    )
+                                })
+                                .unwrap_or_default(),
+                            code,
+                        ));
+                        last_cursor = self.current_view().cursor;
+                    }
                 }
                 Ok(Event::Resize(width16, height16)) => {
                     self.handle_resize_event(width16, height16);

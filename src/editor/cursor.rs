@@ -3,7 +3,7 @@ use super::position::Position;
 use super::text_fragment::TextFragment;
 use std::{cmp::min, fmt};
 
-#[derive(Default)]
+#[derive(Eq, PartialEq, Copy, Clone, Default)]
 pub struct Cursor {
     line_idx: usize,
     col_idx: usize,
