@@ -4,6 +4,7 @@ use terminal::{CursorStyle, Event, KeyCode, KeyEvent, KeyModifiers, Terminal};
 mod terminal;
 use buffer::Buffer;
 mod buffer;
+use position::Position;
 mod position;
 mod size;
 use size::Size;
@@ -12,11 +13,34 @@ mod cursor;
 mod line;
 mod text_fragment;
 mod view;
+use unicode_width::UnicodeWidthStr;
 
 pub const NAME: &str = env!("CARGO_PKG_NAME");
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 // TODO tabが含まれる場合の画面端の処理
+
+struct CommandBar {
+    prompt: String,
+    value: String,
+}
+impl CommandBar {
+    pub fn new(prompt: &str) -> Self {
+        Self {
+            prompt: prompt.to_string(),
+            value: String::default(),
+        }
+    }
+    fn insert(&mut self, c: char) {
+        self.value.push(c);
+    }
+    fn delete_backward(&mut self) {
+        self.value.pop();
+    }
+    pub fn value(&self) -> &str {
+        &self.value
+    }
+}
 
 // 将来的にはEditorは複数のViewとBufferを持つ
 // それぞれのViewはBufferを参照する
@@ -28,6 +52,7 @@ pub struct Editor {
     current_view_idx: usize,
     size: Size,
     message: Option<String>,
+    command_bar: Option<CommandBar>,
 }
 
 impl Editor {
@@ -48,7 +73,7 @@ impl Editor {
             (buffer, message)
         } else {
             let buffer = Buffer::default();
-            let message = Some(format!("blank file"));
+            let message = Some("blank file".to_string());
             (buffer, message)
         };
 
@@ -64,6 +89,7 @@ impl Editor {
             current_view_idx: 0,
             size,
             message,
+            command_bar: None,
         })
     }
 
@@ -132,6 +158,7 @@ impl Editor {
             }
             (KeyCode::Char('x'), KeyModifiers::NONE) => self.current_view_mut().remove_char(),
             (KeyCode::Char('s'), KeyModifiers::CONTROL) => self.save(),
+            (KeyCode::Char(':'), KeyModifiers::NONE) => self.command_loop(),
 
             (KeyCode::Left | KeyCode::Down | KeyCode::Right | KeyCode::Up, KeyModifiers::SHIFT)
             | (KeyCode::PageDown | KeyCode::PageUp, KeyModifiers::NONE) => {
@@ -208,12 +235,24 @@ impl Editor {
             return;
         }
         let _ = Terminal::hide_caret();
-        if let Some(line_text) = &self.message {
-            let bottom_line = self.size.height.saturating_sub(1);
-            Terminal::print_row(bottom_line, line_text).unwrap();
-        }
         let _ = self.current_view_mut().render();
-        self.move_caret();
+        if let Some(command_bar) = &self.command_bar {
+            let bottom_line = self.size.height.saturating_sub(1);
+            let command_text = format!("{}{}", &command_bar.prompt, &command_bar.value);
+            Terminal::print_row(bottom_line, &command_text).unwrap();
+            let command_caret = command_text.width();
+            Terminal::move_caret_to(Position {
+                col_idx: command_caret,
+                line_idx: bottom_line,
+            })
+            .unwrap();
+        } else {
+            if let Some(line_text) = &self.message {
+                let bottom_line = self.size.height.saturating_sub(1);
+                Terminal::print_row(bottom_line, line_text).unwrap();
+            }
+            self.move_caret();
+        }
         let _ = Terminal::show_caret();
         let _ = Terminal::execute();
     }
@@ -273,6 +312,53 @@ impl Editor {
             .map_or("no line", line::Line::content);
 
         self.set_message(&format!("[ insert ] input: {input}, content: {line}"));
+    }
+
+    fn command_loop(&mut self) {
+        Terminal::set_cursor_style(CursorStyle::SteadyBar).unwrap();
+        self.command_bar = Some(CommandBar::new(":"));
+        loop {
+            self.refresh_screen();
+            if let Ok(Event::Key(KeyEvent {
+                code, modifiers, ..
+            })) = Terminal::read_event()
+            {
+                match (code, modifiers) {
+                    (KeyCode::Esc, _) => break,
+                    (KeyCode::Char(c), KeyModifiers::NONE | KeyModifiers::SHIFT) => {
+                        self.command_bar.as_mut().unwrap().insert(c);
+                    }
+                    (KeyCode::Enter, KeyModifiers::NONE) => {
+                        let value = self
+                            .command_bar
+                            .as_ref()
+                            .unwrap()
+                            .value()
+                            .trim()
+                            .to_string();
+                        self.run_command(&value);
+                        break;
+                    }
+                    (KeyCode::Backspace, KeyModifiers::NONE) => {
+                        self.command_bar.as_mut().unwrap().delete_backward();
+                    }
+                    _ => (),
+                }
+            }
+        }
+        Terminal::set_cursor_style(CursorStyle::DefaultUserShape).unwrap();
+        self.command_bar = None;
+    }
+
+    fn run_command(&mut self, prompt: &str) {
+        let (command, args) = prompt.split_once(' ').unwrap_or((prompt, ""));
+
+        match command {
+            "q" | "quit" => self.should_quit = true,
+            "w" | "write" => self.save(),
+            "echo" => self.set_message(args),
+            _ => self.set_message(&format!("Unknown command: {command}")),
+        }
     }
 }
 
