@@ -4,10 +4,7 @@
   inputs.nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
 
   outputs =
-    {
-      self,
-      nixpkgs,
-    }:
+    { self, nixpkgs }:
     let
       supportedSystems = [
         "x86_64-linux"
@@ -118,6 +115,15 @@
             program = toString (
               pkgs.writeShellScript "cargo-fix" ''
                 cargo clippy --allow-dirty --fix --bin "koi"
+              ''
+            );
+          };
+          fmt = {
+            type = "app";
+            buildInputs = with pkgs; [ rustfmt ];
+            program = toString (
+              pkgs.writeShellScript "rustfmt-all" ''
+                rustfmt src/**/*.rs
               ''
             );
           };
