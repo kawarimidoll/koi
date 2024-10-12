@@ -1,7 +1,9 @@
 use super::line::Line;
 use super::position::Position;
 use super::size::Size;
-use std::{cmp::min, fs::read_to_string, io::Error};
+use std::cmp::min;
+use std::fs::{read_to_string, File};
+use std::io::{Error, Write};
 
 pub struct Buffer {
     pub lines: Vec<Line>,
@@ -33,6 +35,24 @@ impl Buffer {
     }
     pub fn ensure_redraw(&mut self) {
         self.needs_redraw = true;
+    }
+    pub fn has_filename(&self) -> bool {
+        self.filename.is_some()
+    }
+    pub fn save_as(&mut self, filename: &str) -> Result<(), Error> {
+        self.filename = Some(filename.to_string());
+        self.save()
+    }
+    pub fn save(&mut self) -> Result<(), Error> {
+        if let Some(path) = &self.filename {
+            let mut file = File::create(path)?;
+            for line in &self.lines {
+                writeln!(file, "{}", line.content())?;
+            }
+            Ok(())
+        } else {
+            Err(Error::new(std::io::ErrorKind::Other, "No file path"))
+        }
     }
     pub fn render<F: Fn(usize, &str) -> Result<(), Error>>(
         &mut self,

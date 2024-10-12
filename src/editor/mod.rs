@@ -129,6 +129,7 @@ impl Editor {
                 self.insert_loop();
             }
             (KeyCode::Char('x'), KeyModifiers::NONE) => self.current_view_mut().remove_char(),
+            (KeyCode::Char('s'), KeyModifiers::CONTROL) => self.save(),
 
             (KeyCode::Left | KeyCode::Down | KeyCode::Right | KeyCode::Up, KeyModifiers::SHIFT)
             | (KeyCode::PageDown | KeyCode::PageUp, KeyModifiers::NONE) => {
@@ -172,6 +173,17 @@ impl Editor {
             _ => (),
         }
     }
+
+    fn save(&mut self) {
+        if self.current_view().has_filename() {
+            // TODO: handle error
+            self.current_view_mut().save().unwrap();
+            // TODO: show message
+        } else {
+            // TODO: input filename
+        }
+    }
+
     #[allow(clippy::as_conversions)]
     fn handle_resize_event(&mut self, width16: u16, height16: u16) {
         let width = width16 as usize;

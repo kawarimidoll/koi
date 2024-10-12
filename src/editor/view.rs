@@ -14,7 +14,7 @@ pub struct View {
 
     size: Size,
     // I don't think View should have buffer as a member, but put it here for now
-    pub buffer: Buffer,
+    buffer: Buffer,
 }
 
 impl View {
@@ -25,6 +25,15 @@ impl View {
             size,
             buffer,
         }
+    }
+    pub fn has_filename(&self) -> bool {
+        self.buffer.has_filename()
+    }
+    pub fn save(&mut self) -> Result<(), Error> {
+        self.buffer.save()
+    }
+    pub fn save_as(&mut self, filename: &str) -> Result<(), Error> {
+        self.buffer.save_as(filename)
     }
     pub fn set_size(&mut self, size: Size) {
         self.size = size;
