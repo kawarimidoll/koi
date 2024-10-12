@@ -368,6 +368,8 @@ mod tests {
             views: vec![view],
             current_view_idx: 0,
             size: Size::default(),
+            message: None,
+            command_bar: None,
         };
         assert_eq!(editor.size, Size::default());
         editor.handle_resize_event(10, 10);
