@@ -140,6 +140,14 @@ impl Editor {
                 self.current_view_mut().move_position(KeyCode::Right);
                 self.insert_loop();
             }
+            (KeyCode::Char('I'), KeyModifiers::NONE) => {
+                self.current_view_mut().move_position(KeyCode::Home);
+                self.insert_loop();
+            }
+            (KeyCode::Char('A'), KeyModifiers::NONE) => {
+                self.current_view_mut().move_position(KeyCode::End);
+                self.insert_loop();
+            }
             (KeyCode::Char('x'), KeyModifiers::NONE) => self.current_view_mut().remove_char(),
             (KeyCode::Char('s'), KeyModifiers::CONTROL) => self.save(),
             (KeyCode::Char(':'), KeyModifiers::NONE) => self.command_loop(),
