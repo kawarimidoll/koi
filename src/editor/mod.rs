@@ -27,6 +27,7 @@ pub struct Editor {
     views: Vec<View>,
     current_view_idx: usize,
     size: Size,
+    message: Option<String>,
 }
 
 impl Editor {
@@ -41,10 +42,14 @@ impl Editor {
 
         let args: Vec<String> = std::env::args().collect();
         // only load the first file for now
-        let buffer = if let Some(first) = args.get(1) {
-            Buffer::from_file(first)
+        let (buffer, message) = if let Some(first) = args.get(1) {
+            let buffer = Buffer::from_file(first);
+            let message = Some(format!("Load file: {first}"));
+            (buffer, message)
         } else {
-            Buffer::default()
+            let buffer = Buffer::default();
+            let message = Some(format!("blank file"));
+            (buffer, message)
         };
 
         let size = Terminal::size().unwrap_or_default();
@@ -58,6 +63,7 @@ impl Editor {
             views: vec![view],
             current_view_idx: 0,
             size,
+            message,
         })
     }
 
@@ -68,8 +74,10 @@ impl Editor {
         self.views.get_mut(self.current_view_idx).unwrap()
     }
 
+    fn set_message(&mut self, message: &str) {
+        self.message = Some(message.to_string());
+    }
     pub fn run(&mut self) {
-        self.print_bottom("Type something. Press 'q' to quit.");
         self.move_caret();
 
         loop {
@@ -81,8 +89,7 @@ impl Editor {
                 Ok(Event::Key(KeyEvent {
                     code, modifiers, ..
                 })) => {
-                    self.handle_key_event(code, modifiers);
-                    self.print_bottom(&format!(
+                    self.set_message(&format!(
                         "cursor: {}, screen: {}, off: {}, [{}], key: {}",
                         self.current_view().cursor,
                         self.current_view().caret_screen_position(),
@@ -100,24 +107,19 @@ impl Editor {
                             .unwrap_or_default(),
                         code,
                     ));
+                    self.handle_key_event(code, modifiers);
                 }
                 Ok(Event::Resize(width16, height16)) => {
                     self.handle_resize_event(width16, height16);
                 }
                 Err(err) => {
-                    self.print_bottom(&format!("{err}"));
+                    self.set_message(&format!("{err}"));
                 }
                 _ => {
-                    self.print_bottom("Unsupported event!");
+                    self.set_message("Unsupported event!");
                 }
             }
         }
-    }
-
-    // for debug
-    fn print_bottom(&self, line_text: &str) {
-        let bottom_line = self.size.height.saturating_sub(1);
-        Terminal::print_row(bottom_line, line_text).unwrap();
     }
 
     fn handle_key_event(&mut self, code: KeyCode, modifiers: KeyModifiers) {
@@ -177,8 +179,13 @@ impl Editor {
     fn save(&mut self) {
         if self.current_view().has_filename() {
             // TODO: handle error
-            self.current_view_mut().save().unwrap();
-            // TODO: show message
+            let save_result = self.current_view_mut().save();
+            let message = if save_result.is_ok() {
+                "File saved successfully"
+            } else {
+                "Error saving file"
+            };
+            self.set_message(message);
         } else {
             // TODO: input filename
         }
@@ -201,6 +208,10 @@ impl Editor {
             return;
         }
         let _ = Terminal::hide_caret();
+        if let Some(line_text) = &self.message {
+            let bottom_line = self.size.height.saturating_sub(1);
+            Terminal::print_row(bottom_line, line_text).unwrap();
+        }
         let _ = self.current_view_mut().render();
         self.move_caret();
         let _ = Terminal::show_caret();
@@ -213,7 +224,7 @@ impl Editor {
     // NOTE: easy version
     fn insert_loop(&mut self) {
         Terminal::set_cursor_style(CursorStyle::SteadyBar).unwrap();
-        self.print_bottom("[ insert ]");
+        self.set_message("[ insert ]");
         loop {
             self.refresh_screen();
             if let Ok(Event::Key(KeyEvent {
@@ -255,13 +266,13 @@ impl Editor {
         }
         Terminal::set_cursor_style(CursorStyle::DefaultUserShape).unwrap();
     }
-    fn insert_message(&self, input: &str) {
+    fn insert_message(&mut self, input: &str) {
         let line = self
             .current_view()
             .get_line(self.current_view().cursor.line_idx())
             .map_or("no line", line::Line::content);
 
-        self.print_bottom(&format!("[ insert ] input: {input}, content: {line}"));
+        self.set_message(&format!("[ insert ] input: {input}, content: {line}"));
     }
 }
 
