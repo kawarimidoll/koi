@@ -197,6 +197,9 @@ impl Editor {
         self.current_view_mut().set_size(view_size);
     }
     fn refresh_screen(&mut self) {
+        if self.size.width == 0 || self.size.height == 0 {
+            return;
+        }
         let _ = Terminal::hide_caret();
         let _ = self.current_view_mut().render();
         self.move_caret();
