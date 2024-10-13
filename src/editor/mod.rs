@@ -121,6 +121,7 @@ impl Editor {
                 }
                 Ok(Event::Resize(width16, height16)) => {
                     self.handle_resize_event(width16, height16);
+                    self.set_message(&format!("Resize to: {}", self.size));
                 }
                 Err(err) => {
                     self.set_message(&format!("{err}"));
@@ -218,7 +219,6 @@ impl Editor {
     fn handle_resize_event(&mut self, width16: u16, height16: u16) {
         let width = width16 as usize;
         let height = height16 as usize;
-        // let _ = Terminal::print_row(height - 1, &format!("Resize to: {width:?}, {height:?}"));
         self.size = Size { width, height };
         let view_size = Size {
             width,
