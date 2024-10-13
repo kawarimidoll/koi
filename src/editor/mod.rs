@@ -10,7 +10,7 @@ use command_bar::CommandBar;
 mod command_bar;
 mod size;
 use size::Size;
-use view::View;
+use view::{MoveCode, View};
 mod cursor;
 use cursor::Cursor;
 mod line;
@@ -170,15 +170,15 @@ impl Editor {
             (KeyCode::Char('q'), KeyModifiers::NONE) => self.should_quit = true,
             (KeyCode::Char('i'), KeyModifiers::NONE) => self.set_mode(Mode::Insert),
             (KeyCode::Char('a'), KeyModifiers::NONE) => {
-                self.current_view_mut().move_position(KeyCode::Right);
+                self.current_view_mut().move_position(MoveCode::Right);
                 self.set_mode(Mode::Insert);
             }
             (KeyCode::Char('I'), KeyModifiers::NONE) => {
-                self.current_view_mut().move_position(KeyCode::Home);
+                self.current_view_mut().move_position(MoveCode::FirstChar);
                 self.set_mode(Mode::Insert);
             }
             (KeyCode::Char('A'), KeyModifiers::NONE) => {
-                self.current_view_mut().move_position(KeyCode::End);
+                self.current_view_mut().move_position(MoveCode::LastChar);
                 self.set_mode(Mode::Insert);
             }
             (KeyCode::Char('x'), KeyModifiers::NONE) => self.current_view_mut().remove_char(),
@@ -189,34 +189,23 @@ impl Editor {
             | (KeyCode::PageDown | KeyCode::PageUp, KeyModifiers::NONE) => {
                 self.current_view_mut().scroll_screen(code);
             }
-            (
-                KeyCode::Left
-                | KeyCode::Down
-                | KeyCode::Right
-                | KeyCode::Up
-                | KeyCode::Home
-                | KeyCode::End,
-                KeyModifiers::NONE,
-            ) => {
-                self.current_view_mut().move_position(code);
+            (KeyCode::Left | KeyCode::Char('h'), KeyModifiers::NONE) => {
+                self.current_view_mut().move_position(MoveCode::Left);
             }
-            (KeyCode::Char('h'), KeyModifiers::NONE) => {
-                self.current_view_mut().move_position(KeyCode::Left);
+            (KeyCode::Home | KeyCode::Char('H'), KeyModifiers::SHIFT) => {
+                self.current_view_mut().move_position(MoveCode::FirstChar);
             }
-            (KeyCode::Char('H'), KeyModifiers::SHIFT) => {
-                self.current_view_mut().move_position(KeyCode::Home);
+            (KeyCode::Down | KeyCode::Char('j'), KeyModifiers::NONE) => {
+                self.current_view_mut().move_position(MoveCode::Down);
             }
-            (KeyCode::Char('j'), KeyModifiers::NONE) => {
-                self.current_view_mut().move_position(KeyCode::Down);
+            (KeyCode::Up | KeyCode::Char('k'), KeyModifiers::NONE) => {
+                self.current_view_mut().move_position(MoveCode::Up);
             }
-            (KeyCode::Char('k'), KeyModifiers::NONE) => {
-                self.current_view_mut().move_position(KeyCode::Up);
+            (KeyCode::Right | KeyCode::Char('l'), KeyModifiers::NONE) => {
+                self.current_view_mut().move_position(MoveCode::Right);
             }
-            (KeyCode::Char('l'), KeyModifiers::NONE) => {
-                self.current_view_mut().move_position(KeyCode::Right);
-            }
-            (KeyCode::Char('L'), KeyModifiers::SHIFT) => {
-                self.current_view_mut().move_position(KeyCode::End);
+            (KeyCode::End | KeyCode::Char('L'), KeyModifiers::SHIFT) => {
+                self.current_view_mut().move_position(MoveCode::LastChar);
             }
             (KeyCode::Char('f'), KeyModifiers::CONTROL) => {
                 self.current_view_mut().scroll_screen(KeyCode::PageDown);
@@ -315,7 +304,7 @@ impl Editor {
                 if self.current_view().cursor.col_idx() > 0
                     || self.current_view().cursor.line_idx() > 0
                 {
-                    self.current_view_mut().move_position(KeyCode::Left);
+                    self.current_view_mut().move_position(MoveCode::Left);
                     self.current_view_mut().remove_char();
                     self.insert_message("Backspace");
                 }

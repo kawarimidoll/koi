@@ -7,6 +7,19 @@ use super::terminal::{KeyCode, Terminal};
 use super::text_fragment::TextFragment;
 use std::{cmp::min, io::Error};
 
+#[derive(Copy, Clone, PartialEq)]
+pub enum MoveCode {
+    Left,
+    Right,
+    Up,
+    Down,
+    // FirstLine,
+    // LastLine,
+    FirstChar,
+    LastChar,
+    // FirstCol,
+}
+
 pub struct View {
     pub cursor: Cursor,
     // offset is top-left vertex of the visible buffer
@@ -55,13 +68,13 @@ impl View {
         if c == '\n' {
             if self.buffer.insert_newline(self.cursor.position()) {
                 self.ensure_redraw();
-                self.move_position(KeyCode::Right);
+                self.move_position(MoveCode::Right);
             }
             return;
         }
         if self.buffer.insert(&c.to_string(), self.cursor.position()) {
             self.ensure_redraw();
-            self.move_position(KeyCode::Right);
+            self.move_position(MoveCode::Right);
         }
     }
     pub fn remove_char(&mut self) {
@@ -113,15 +126,17 @@ impl View {
                 .saturating_sub(self.size.height),
         );
     }
-    pub fn move_position(&mut self, code: KeyCode) {
+    pub fn move_position(&mut self, code: MoveCode) {
         match code {
-            KeyCode::Left => self.cursor.move_prev_grapheme(&self.buffer),
-            KeyCode::Right => self.cursor.move_next_grapheme(&self.buffer),
-            KeyCode::Up => self.cursor.move_prev_line(1, &self.buffer),
-            KeyCode::Down => self.cursor.move_next_line(1, &self.buffer),
-            KeyCode::Home => self.cursor.move_left_edge(&self.buffer),
-            KeyCode::End => self.cursor.move_right_edge(&self.buffer),
-            _ => (),
+            MoveCode::Left => self.cursor.move_prev_grapheme(&self.buffer),
+            MoveCode::Right => self.cursor.move_next_grapheme(&self.buffer),
+            MoveCode::Up => self.cursor.move_prev_line(1, &self.buffer),
+            MoveCode::Down => self.cursor.move_next_line(1, &self.buffer),
+            MoveCode::FirstChar => self.cursor.move_left_edge(&self.buffer),
+            MoveCode::LastChar => self.cursor.move_right_edge(&self.buffer),
+            // MoveCode::FirstLine => self.cursor.move_first_line(&self.buffer),
+            // MoveCode::LastLine => self.cursor.move_last_line(&self.buffer),
+            // MoveCode::FirstCol => self.cursor.move_first_col(&self.buffer),
         };
         self.scroll_into_view();
     }
