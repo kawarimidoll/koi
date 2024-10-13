@@ -9,15 +9,15 @@ Build my own text editor in Rust
 - [x] insert characters
 - [x] insert newline
 - [x] delete characters
-- [ ] save file
+- [x] save file
 - [ ] status line
-- [ ] message line
+- [x] message line
 - [ ] search
 
 ### advanced features
 
 - [ ] wrap long lines
-- [ ] modal editing
+- [x] modal editing
 - [ ] redo / undo
 - [ ] repeat
 - [ ] copy / paste
