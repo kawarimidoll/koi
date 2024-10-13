@@ -22,6 +22,13 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 // TODO tabが含まれる場合の画面端の処理
 
+#[derive(PartialEq)]
+pub enum Mode {
+    Normal,
+    Insert,
+    Command,
+}
+
 // 将来的にはEditorは複数のViewとBufferを持つ
 // それぞれのViewはBufferを参照する
 // Editorは現在どのViewにフォーカスしているかの情報を持つ
@@ -30,6 +37,7 @@ pub struct Editor {
     // buffer: Buffer,
     views: Vec<View>,
     current_view_idx: usize,
+    mode: Mode,
     size: Size,
     message: Option<String>,
     command_bar: Option<CommandBar>,
@@ -67,6 +75,7 @@ impl Editor {
             should_quit: false,
             views: vec![view],
             current_view_idx: 0,
+            mode: Mode::Normal,
             size,
             message,
             command_bar: None,
@@ -96,8 +105,12 @@ impl Editor {
                 Ok(Event::Key(KeyEvent {
                     code, modifiers, ..
                 })) => {
-                    self.handle_key_event(code, modifiers);
-                    if last_cursor != self.current_view().cursor {
+                    match self.mode {
+                        Mode::Normal => self.handle_key_event_nomal(code, modifiers),
+                        Mode::Insert => self.handle_key_event_insert(code, modifiers),
+                        Mode::Command => self.handle_key_event_command(code, modifiers),
+                    }
+                    if self.mode == Mode::Normal && last_cursor != self.current_view().cursor {
                         self.set_message(&format!(
                             "cursor: {}, screen: {}, off: {}, [{}], key: {}",
                             self.current_view().cursor,
@@ -133,25 +146,44 @@ impl Editor {
         }
     }
 
-    fn handle_key_event(&mut self, code: KeyCode, modifiers: KeyModifiers) {
+    fn set_mode(&mut self, mode: Mode) {
+        self.mode = mode;
+
+        match self.mode {
+            Mode::Normal => {
+                Terminal::set_cursor_style(CursorStyle::DefaultUserShape).unwrap();
+                self.command_bar = None;
+            }
+            Mode::Insert => {
+                Terminal::set_cursor_style(CursorStyle::SteadyBar).unwrap();
+                self.set_message("[ insert ]");
+            }
+            Mode::Command => {
+                Terminal::set_cursor_style(CursorStyle::SteadyBar).unwrap();
+                self.command_bar = Some(CommandBar::new(":"));
+            }
+        }
+    }
+
+    fn handle_key_event_nomal(&mut self, code: KeyCode, modifiers: KeyModifiers) {
         match (code, modifiers) {
             (KeyCode::Char('q'), KeyModifiers::NONE) => self.should_quit = true,
-            (KeyCode::Char('i'), KeyModifiers::NONE) => self.insert_loop(),
+            (KeyCode::Char('i'), KeyModifiers::NONE) => self.set_mode(Mode::Insert),
             (KeyCode::Char('a'), KeyModifiers::NONE) => {
                 self.current_view_mut().move_position(KeyCode::Right);
-                self.insert_loop();
+                self.set_mode(Mode::Insert);
             }
             (KeyCode::Char('I'), KeyModifiers::NONE) => {
                 self.current_view_mut().move_position(KeyCode::Home);
-                self.insert_loop();
+                self.set_mode(Mode::Insert);
             }
             (KeyCode::Char('A'), KeyModifiers::NONE) => {
                 self.current_view_mut().move_position(KeyCode::End);
-                self.insert_loop();
+                self.set_mode(Mode::Insert);
             }
             (KeyCode::Char('x'), KeyModifiers::NONE) => self.current_view_mut().remove_char(),
             (KeyCode::Char('s'), KeyModifiers::CONTROL) => self.save(),
-            (KeyCode::Char(':'), KeyModifiers::NONE) => self.command_loop(),
+            (KeyCode::Char(':'), KeyModifiers::NONE) => self.set_mode(Mode::Command),
 
             (KeyCode::Left | KeyCode::Down | KeyCode::Right | KeyCode::Up, KeyModifiers::SHIFT)
             | (KeyCode::PageDown | KeyCode::PageUp, KeyModifiers::NONE) => {
@@ -256,49 +288,40 @@ impl Editor {
     }
 
     // NOTE: easy version
-    fn insert_loop(&mut self) {
-        Terminal::set_cursor_style(CursorStyle::SteadyBar).unwrap();
-        self.set_message("[ insert ]");
-        loop {
-            self.refresh_screen();
-            if let Ok(Event::Key(KeyEvent {
-                code, modifiers, ..
-            })) = Terminal::read_event()
-            {
-                match (code, modifiers) {
-                    (KeyCode::Esc, _) => break,
-                    (KeyCode::Char(c), KeyModifiers::NONE | KeyModifiers::SHIFT) => {
-                        self.current_view_mut().insert_char(c);
-                        self.insert_message(&c.to_string());
-                    }
-                    (KeyCode::Tab, KeyModifiers::NONE) => {
-                        self.current_view_mut().insert_char('\t');
-                        self.insert_message("Tab");
-                    }
-                    (KeyCode::Enter, KeyModifiers::NONE) => {
-                        self.current_view_mut().insert_char('\n');
-                        self.insert_message("Enter");
-                    }
-                    (KeyCode::Delete, KeyModifiers::NONE) => {
-                        self.current_view_mut().remove_char();
-                        self.insert_message("Delete");
-                    }
-                    (KeyCode::Backspace, KeyModifiers::NONE) => {
-                        // just detect if the caret is at the beginning of the buffer
-                        // so we don't need to use caret_screen_position() here
-                        if self.current_view().cursor.col_idx() > 0
-                            || self.current_view().cursor.line_idx() > 0
-                        {
-                            self.current_view_mut().move_position(KeyCode::Left);
-                            self.current_view_mut().remove_char();
-                            self.insert_message("Backspace");
-                        }
-                    }
-                    _ => (),
+    fn handle_key_event_insert(&mut self, code: KeyCode, modifiers: KeyModifiers) {
+        match (code, modifiers) {
+            (KeyCode::Esc, _) => {
+                self.set_mode(Mode::Normal);
+            }
+            (KeyCode::Char(c), KeyModifiers::NONE | KeyModifiers::SHIFT) => {
+                self.current_view_mut().insert_char(c);
+                self.insert_message(&c.to_string());
+            }
+            (KeyCode::Tab, KeyModifiers::NONE) => {
+                self.current_view_mut().insert_char('\t');
+                self.insert_message("Tab");
+            }
+            (KeyCode::Enter, KeyModifiers::NONE) => {
+                self.current_view_mut().insert_char('\n');
+                self.insert_message("Enter");
+            }
+            (KeyCode::Delete, KeyModifiers::NONE) => {
+                self.current_view_mut().remove_char();
+                self.insert_message("Delete");
+            }
+            (KeyCode::Backspace, KeyModifiers::NONE) => {
+                // just detect if the caret is at the beginning of the buffer
+                // so we don't need to use caret_screen_position() here
+                if self.current_view().cursor.col_idx() > 0
+                    || self.current_view().cursor.line_idx() > 0
+                {
+                    self.current_view_mut().move_position(KeyCode::Left);
+                    self.current_view_mut().remove_char();
+                    self.insert_message("Backspace");
                 }
             }
+            _ => (),
         }
-        Terminal::set_cursor_style(CursorStyle::DefaultUserShape).unwrap();
     }
     fn insert_message(&mut self, input: &str) {
         let line = self
@@ -309,40 +332,30 @@ impl Editor {
         self.set_message(&format!("[ insert ] input: {input}, content: {line}"));
     }
 
-    fn command_loop(&mut self) {
-        Terminal::set_cursor_style(CursorStyle::SteadyBar).unwrap();
-        self.command_bar = Some(CommandBar::new(":"));
-        loop {
-            self.refresh_screen();
-            if let Ok(Event::Key(KeyEvent {
-                code, modifiers, ..
-            })) = Terminal::read_event()
-            {
-                match (code, modifiers) {
-                    (KeyCode::Esc, _) => break,
-                    (KeyCode::Char(c), KeyModifiers::NONE | KeyModifiers::SHIFT) => {
-                        self.command_bar.as_mut().unwrap().insert(c);
-                    }
-                    (KeyCode::Enter, KeyModifiers::NONE) => {
-                        let value = self
-                            .command_bar
-                            .as_ref()
-                            .unwrap()
-                            .value()
-                            .trim()
-                            .to_string();
-                        self.run_command(&value);
-                        break;
-                    }
-                    (KeyCode::Backspace, KeyModifiers::NONE) => {
-                        self.command_bar.as_mut().unwrap().delete_backward();
-                    }
-                    _ => (),
-                }
+    fn handle_key_event_command(&mut self, code: KeyCode, modifiers: KeyModifiers) {
+        match (code, modifiers) {
+            (KeyCode::Esc, _) => {
+                self.set_mode(Mode::Normal);
             }
+            (KeyCode::Char(c), KeyModifiers::NONE | KeyModifiers::SHIFT) => {
+                self.command_bar.as_mut().unwrap().insert(c);
+            }
+            (KeyCode::Enter, KeyModifiers::NONE) => {
+                let value = self
+                    .command_bar
+                    .as_ref()
+                    .unwrap()
+                    .value()
+                    .trim()
+                    .to_string();
+                self.run_command(&value);
+                self.set_mode(Mode::Normal);
+            }
+            (KeyCode::Backspace, KeyModifiers::NONE) => {
+                self.command_bar.as_mut().unwrap().delete_backward();
+            }
+            _ => (),
         }
-        Terminal::set_cursor_style(CursorStyle::DefaultUserShape).unwrap();
-        self.command_bar = None;
     }
 
     fn run_command(&mut self, prompt: &str) {
@@ -385,6 +398,7 @@ mod tests {
             should_quit: false,
             views: vec![view],
             current_view_idx: 0,
+            mode: Mode::Normal,
             size: Size::default(),
             message: None,
             command_bar: None,
