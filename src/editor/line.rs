@@ -45,6 +45,13 @@ impl Line {
     pub fn grapheme_count(&self) -> usize {
         self.fragments.len()
     }
+    pub fn indent_width(&self) -> usize {
+        self.fragments
+            .iter()
+            .take_while(|fragment| fragment.grapheme() == " " || fragment.grapheme() == "\t")
+            .map(TextFragment::width)
+            .sum()
+    }
     #[cfg(test)]
     pub fn get_str(&self) -> String {
         self.get_str_by_col_range(0..self.col_width)
@@ -343,5 +350,17 @@ mod tests {
         let remainder = line.split_off(0);
         assert_eq!(line.content(), "");
         assert_eq!(remainder.content(), "q");
+    }
+
+    #[test]
+    fn test_indent_width() {
+        let line = Line::from("    test_from");
+        assert_eq!(line.indent_width(), 4);
+        let line = Line::from("\ttest_from");
+        assert_eq!(line.indent_width(), 4);
+        let line = Line::from("test_from");
+        assert_eq!(line.indent_width(), 0);
+        let line = Line::from("  \ttest_from");
+        assert_eq!(line.indent_width(), 4);
     }
 }
