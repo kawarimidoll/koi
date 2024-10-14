@@ -93,14 +93,12 @@ impl Editor {
         self.message = Some(message.to_string());
     }
     pub fn run(&mut self) {
-        self.move_caret();
-
         let mut last_cursor = Cursor::default();
         loop {
-            self.refresh_screen();
             if self.should_quit {
                 break;
             }
+            self.refresh_screen();
             match Terminal::read_event() {
                 Ok(Event::Key(KeyEvent {
                     code, modifiers, ..
