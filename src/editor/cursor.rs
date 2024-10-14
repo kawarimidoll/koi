@@ -55,10 +55,10 @@ impl Cursor {
     pub fn col_want(&self) -> usize {
         self.col_want
     }
-    pub fn move_left_edge(&mut self, current_buffer: &Buffer) {
+    pub fn move_first_char(&mut self, current_buffer: &Buffer) {
         self.set_col_idx(0, current_buffer);
     }
-    pub fn move_right_edge(&mut self, current_buffer: &Buffer) {
+    pub fn move_last_char(&mut self, current_buffer: &Buffer) {
         self.set_col_idx(usize::MAX, current_buffer);
     }
     pub fn move_first_line(&mut self, current_buffer: &Buffer) {
