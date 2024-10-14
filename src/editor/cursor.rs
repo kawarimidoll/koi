@@ -1,4 +1,5 @@
 use super::buffer::Buffer;
+use super::line::Line;
 use super::position::Position;
 use super::text_fragment::TextFragment;
 use std::{cmp::min, fmt};
@@ -61,12 +62,19 @@ impl Cursor {
     pub fn move_last_char(&mut self, current_buffer: &Buffer) {
         self.set_col_idx(usize::MAX, current_buffer);
     }
+    pub fn move_first_non_blank(&mut self, current_buffer: &Buffer) {
+        let col_idx = current_buffer
+            .lines
+            .get(self.line_idx)
+            .map_or(0, Line::indent_width);
+        self.set_col_idx(col_idx, current_buffer);
+    }
     pub fn move_first_line(&mut self, current_buffer: &Buffer) {
         self.set_line_idx(0, current_buffer);
     }
     pub fn move_last_line(&mut self, current_buffer: &Buffer) {
         // shorthand: no need to use set_line_idx
-        self.line_idx =  current_buffer.get_lines_count();
+        self.line_idx = current_buffer.get_lines_count();
         self.snap_col_idx(current_buffer);
     }
     pub fn move_prev_grapheme(&mut self, current_buffer: &Buffer) {

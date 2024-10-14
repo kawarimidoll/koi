@@ -192,8 +192,12 @@ impl Editor {
             (KeyCode::Left | KeyCode::Char('h'), KeyModifiers::NONE) => {
                 self.current_view_mut().move_position(MoveCode::Left);
             }
-            (KeyCode::Home | KeyCode::Char('H'), KeyModifiers::SHIFT) => {
+            (KeyCode::Home | KeyCode::Char('0'), KeyModifiers::NONE) => {
                 self.current_view_mut().move_position(MoveCode::FirstChar);
+            }
+            (KeyCode::Char('H'), KeyModifiers::SHIFT) => {
+                self.current_view_mut()
+                    .move_position(MoveCode::FirstNonBlank);
             }
             (KeyCode::Down | KeyCode::Char('j'), KeyModifiers::NONE) => {
                 self.current_view_mut().move_position(MoveCode::Down);

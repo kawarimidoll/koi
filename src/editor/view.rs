@@ -17,7 +17,7 @@ pub enum MoveCode {
     LastLine,
     FirstChar,
     LastChar,
-    // FirstCol,
+    FirstNonBlank,
 }
 
 pub struct View {
@@ -136,7 +136,7 @@ impl View {
             MoveCode::LastChar => self.cursor.move_last_char(&self.buffer),
             MoveCode::FirstLine => self.cursor.move_first_line(&self.buffer),
             MoveCode::LastLine => self.cursor.move_last_line(&self.buffer),
-            // MoveCode::FirstCol => self.cursor.move_first_col(&self.buffer),
+            MoveCode::FirstNonBlank => self.cursor.move_first_non_blank(&self.buffer),
         };
         self.scroll_into_view();
     }
