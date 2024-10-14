@@ -3,7 +3,7 @@ use super::cursor::Cursor;
 use super::line::Line;
 use super::position::Position;
 use super::size::Size;
-use super::terminal::{KeyCode, Terminal};
+use super::terminal::Terminal;
 use super::text_fragment::TextFragment;
 use std::{cmp::min, io::Error};
 
@@ -18,6 +18,14 @@ pub enum MoveCode {
     FirstChar,
     LastChar,
     FirstNonBlank,
+}
+
+#[derive(Copy, Clone, PartialEq)]
+pub enum ScrollCode {
+    Left(usize),
+    Right(usize),
+    Up(usize),
+    Down(usize),
 }
 
 pub struct View {
@@ -83,16 +91,18 @@ impl View {
         }
     }
 
-    pub fn scroll_screen(&mut self, code: KeyCode) {
+    pub fn height(&self)->usize{
+        self.size.height
+    }
+    pub fn scroll_screen(&mut self, code: ScrollCode) {
         let saved_offset = self.offset;
         match code {
-            KeyCode::Left => self.scroll_left(),
-            KeyCode::Right => self.scroll_right(),
-            KeyCode::Up => self.scroll_up(1),
-            KeyCode::Down => self.scroll_down(1),
-            KeyCode::PageUp => self.scroll_up(self.size.height),
-            KeyCode::PageDown => self.scroll_down(self.size.height),
-            _ => (),
+            ScrollCode::Left(_step) => self.scroll_left(),
+            ScrollCode::Right(_step) => self.scroll_right(),
+            ScrollCode::Up(step) => self.scroll_up(step),
+            ScrollCode::Down(step) => self.scroll_down(step),
+            // ScrollCode::PageUp => self.scroll_up(self.size.height),
+            // ScrollCode::PageDown => self.scroll_down(self.size.height),
         };
         self.buffer.needs_redraw = self.offset != saved_offset;
     }
@@ -179,43 +189,43 @@ mod tests {
         let buffer = Buffer::from_string("ab\ncd\n");
         let size = Size::new(2, 2);
         let mut view = View::new(buffer, size);
-        view.scroll_screen(KeyCode::Down);
+        view.scroll_screen(ScrollCode::Down(1));
         assert_eq!(view.caret_screen_position(), Position::new(0, 0));
         assert_eq!(view.offset, Position::new(1, 0));
         assert_eq!(view.buffer.needs_redraw, true);
         view.buffer.needs_redraw = false;
-        view.scroll_screen(KeyCode::Down);
+        view.scroll_screen(ScrollCode::Down(1));
         assert_eq!(view.caret_screen_position(), Position::new(1, 0));
         assert_eq!(view.offset, Position::new(1, 0));
         assert_eq!(view.buffer.needs_redraw, false);
         view.buffer.needs_redraw = false;
-        view.scroll_screen(KeyCode::Up);
+        view.scroll_screen(ScrollCode::Up(1));
         assert_eq!(view.caret_screen_position(), Position::new(1, 0));
         assert_eq!(view.offset, Position::new(0, 0));
         assert_eq!(view.buffer.needs_redraw, true);
         view.buffer.needs_redraw = false;
-        view.scroll_screen(KeyCode::Up);
+        view.scroll_screen(ScrollCode::Up(1));
         assert_eq!(view.caret_screen_position(), Position::new(0, 0));
         assert_eq!(view.offset, Position::new(0, 0));
         assert_eq!(view.buffer.needs_redraw, false);
         view.buffer.needs_redraw = false;
 
-        view.scroll_screen(KeyCode::Right);
+        view.scroll_screen(ScrollCode::Right(1));
         assert_eq!(view.caret_screen_position(), Position::new(0, 0));
         assert_eq!(view.offset, Position::new(0, 1));
         assert_eq!(view.buffer.needs_redraw, true);
         view.buffer.needs_redraw = false;
-        view.scroll_screen(KeyCode::Right);
+        view.scroll_screen(ScrollCode::Right(1));
         assert_eq!(view.caret_screen_position(), Position::new(0, 1));
         assert_eq!(view.offset, Position::new(0, 1));
         assert_eq!(view.buffer.needs_redraw, false);
         view.buffer.needs_redraw = false;
-        view.scroll_screen(KeyCode::Left);
+        view.scroll_screen(ScrollCode::Left(1));
         assert_eq!(view.caret_screen_position(), Position::new(0, 1));
         assert_eq!(view.offset, Position::new(0, 0));
         assert_eq!(view.buffer.needs_redraw, true);
         view.buffer.needs_redraw = false;
-        view.scroll_screen(KeyCode::Left);
+        view.scroll_screen(ScrollCode::Left(1));
         assert_eq!(view.caret_screen_position(), Position::new(0, 0));
         assert_eq!(view.offset, Position::new(0, 0));
         assert_eq!(view.buffer.needs_redraw, false);

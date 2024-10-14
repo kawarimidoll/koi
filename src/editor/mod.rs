@@ -10,7 +10,7 @@ use command_bar::CommandBar;
 mod command_bar;
 mod size;
 use size::Size;
-use view::{MoveCode, View};
+use view::{MoveCode, ScrollCode, View};
 mod cursor;
 use cursor::Cursor;
 mod line;
@@ -211,9 +211,28 @@ impl Editor {
             (KeyCode::Char('s'), KeyModifiers::CONTROL) => self.save(),
             (KeyCode::Char(':'), KeyModifiers::NONE) => self.set_mode(Mode::Command),
 
-            (KeyCode::Left | KeyCode::Down | KeyCode::Right | KeyCode::Up, KeyModifiers::SHIFT)
-            | (KeyCode::PageDown | KeyCode::PageUp, KeyModifiers::NONE) => {
-                self.current_view_mut().scroll_screen(code);
+            (KeyCode::Left, KeyModifiers::SHIFT) => {
+                self.current_view_mut().scroll_screen(ScrollCode::Left(1));
+            }
+            (KeyCode::Right, KeyModifiers::SHIFT) => {
+                self.current_view_mut().scroll_screen(ScrollCode::Right(1));
+            }
+            (KeyCode::Down, KeyModifiers::SHIFT) => {
+                self.current_view_mut().scroll_screen(ScrollCode::Down(1));
+            }
+            (KeyCode::Up, KeyModifiers::SHIFT) => {
+                self.current_view_mut().scroll_screen(ScrollCode::Up(1));
+            }
+            (KeyCode::PageDown, KeyModifiers::NONE)
+            | (KeyCode::Char('f'), KeyModifiers::CONTROL) => {
+                let height =self.current_view().height();
+                self.current_view_mut()
+                    .scroll_screen(ScrollCode::Down(height));
+            }
+            (KeyCode::PageUp, KeyModifiers::NONE) | (KeyCode::Char('b'), KeyModifiers::CONTROL) => {
+                let height =self.current_view().height();
+                self.current_view_mut()
+                    .scroll_screen(ScrollCode::Up(height));
             }
             (KeyCode::Left | KeyCode::Char('h'), KeyModifiers::NONE) => {
                 self.current_view_mut().move_position(MoveCode::Left);
@@ -242,12 +261,6 @@ impl Editor {
             }
             (KeyCode::Char('G'), KeyModifiers::SHIFT) => {
                 self.current_view_mut().move_position(MoveCode::LastLine);
-            }
-            (KeyCode::Char('f'), KeyModifiers::CONTROL) => {
-                self.current_view_mut().scroll_screen(KeyCode::PageDown);
-            }
-            (KeyCode::Char('b'), KeyModifiers::CONTROL) => {
-                self.current_view_mut().scroll_screen(KeyCode::PageUp);
             }
             _ => (),
         }
