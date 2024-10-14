@@ -207,6 +207,12 @@ impl Editor {
             (KeyCode::End | KeyCode::Char('L'), KeyModifiers::SHIFT) => {
                 self.current_view_mut().move_position(MoveCode::LastChar);
             }
+            (KeyCode::Char('g'), KeyModifiers::NONE) => {
+                self.current_view_mut().move_position(MoveCode::FirstLine);
+            }
+            (KeyCode::Char('G'), KeyModifiers::SHIFT) => {
+                self.current_view_mut().move_position(MoveCode::LastLine);
+            }
             (KeyCode::Char('f'), KeyModifiers::CONTROL) => {
                 self.current_view_mut().scroll_screen(KeyCode::PageDown);
             }

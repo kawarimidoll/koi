@@ -61,6 +61,14 @@ impl Cursor {
     pub fn move_right_edge(&mut self, current_buffer: &Buffer) {
         self.set_col_idx(usize::MAX, current_buffer);
     }
+    pub fn move_first_line(&mut self, current_buffer: &Buffer) {
+        self.set_line_idx(0, current_buffer);
+    }
+    pub fn move_last_line(&mut self, current_buffer: &Buffer) {
+        // shorthand: no need to use set_line_idx
+        self.line_idx =  current_buffer.get_lines_count();
+        self.snap_col_idx(current_buffer);
+    }
     pub fn move_prev_grapheme(&mut self, current_buffer: &Buffer) {
         if self.col_idx > 0 {
             self.set_col_idx(self.col_idx.saturating_sub(1), current_buffer);

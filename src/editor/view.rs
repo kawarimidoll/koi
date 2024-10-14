@@ -13,8 +13,8 @@ pub enum MoveCode {
     Right,
     Up,
     Down,
-    // FirstLine,
-    // LastLine,
+    FirstLine,
+    LastLine,
     FirstChar,
     LastChar,
     // FirstCol,
@@ -134,8 +134,8 @@ impl View {
             MoveCode::Down => self.cursor.move_next_line(1, &self.buffer),
             MoveCode::FirstChar => self.cursor.move_left_edge(&self.buffer),
             MoveCode::LastChar => self.cursor.move_right_edge(&self.buffer),
-            // MoveCode::FirstLine => self.cursor.move_first_line(&self.buffer),
-            // MoveCode::LastLine => self.cursor.move_last_line(&self.buffer),
+            MoveCode::FirstLine => self.cursor.move_first_line(&self.buffer),
+            MoveCode::LastLine => self.cursor.move_last_line(&self.buffer),
             // MoveCode::FirstCol => self.cursor.move_first_col(&self.buffer),
         };
         self.scroll_into_view();
