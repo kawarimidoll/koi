@@ -192,74 +192,74 @@ impl Editor {
     }
 
     fn handle_key_event_nomal(&mut self, code: KeyCode, modifiers: KeyModifiers) {
-        match (code, modifiers) {
-            (KeyCode::Char('q'), KeyModifiers::NONE) => self.should_quit = true,
-            (KeyCode::Char('i'), KeyModifiers::NONE) => self.set_mode(Mode::Insert),
-            (KeyCode::Char('a'), KeyModifiers::NONE) => {
+        let key_repr: &str = &Editor::key_to_string(code, modifiers);
+        match key_repr {
+            "q" => self.should_quit = true,
+            "i" => self.set_mode(Mode::Insert),
+            "a" => {
                 self.current_view_mut().move_position(MoveCode::Right);
                 self.set_mode(Mode::Insert);
             }
-            (KeyCode::Char('I'), KeyModifiers::NONE) => {
+            "I" => {
                 self.current_view_mut().move_position(MoveCode::FirstChar);
                 self.set_mode(Mode::Insert);
             }
-            (KeyCode::Char('A'), KeyModifiers::NONE) => {
+            "A" => {
                 self.current_view_mut().move_position(MoveCode::LastChar);
                 self.set_mode(Mode::Insert);
             }
-            (KeyCode::Char('x'), KeyModifiers::NONE) => self.current_view_mut().remove_char(),
-            (KeyCode::Char('s'), KeyModifiers::CONTROL) => self.save(),
-            (KeyCode::Char(':'), KeyModifiers::NONE) => self.set_mode(Mode::Command),
+            "x" => self.current_view_mut().remove_char(),
+            "<C-S>" => self.save(),
+            ":" => self.set_mode(Mode::Command),
 
-            (KeyCode::Left, KeyModifiers::SHIFT) => {
+            "<S-LEFT>" => {
                 self.current_view_mut().scroll_screen(ScrollCode::Left(1));
             }
-            (KeyCode::Right, KeyModifiers::SHIFT) => {
+            "<S-RIGHT>" => {
                 self.current_view_mut().scroll_screen(ScrollCode::Right(1));
             }
-            (KeyCode::Down, KeyModifiers::SHIFT) => {
+            "<S-DOWN>" => {
                 self.current_view_mut().scroll_screen(ScrollCode::Down(1));
             }
-            (KeyCode::Up, KeyModifiers::SHIFT) => {
+            "<S-UP>" => {
                 self.current_view_mut().scroll_screen(ScrollCode::Up(1));
             }
-            (KeyCode::PageDown, KeyModifiers::NONE)
-            | (KeyCode::Char('f'), KeyModifiers::CONTROL) => {
-                let height =self.current_view().height();
+            "<PAGEDOWN>" | "<C-F>" => {
+                let height = self.current_view().height();
                 self.current_view_mut()
                     .scroll_screen(ScrollCode::Down(height));
             }
-            (KeyCode::PageUp, KeyModifiers::NONE) | (KeyCode::Char('b'), KeyModifiers::CONTROL) => {
-                let height =self.current_view().height();
+            "<PAGEUP>" | "<C-B>" => {
+                let height = self.current_view().height();
                 self.current_view_mut()
                     .scroll_screen(ScrollCode::Up(height));
             }
-            (KeyCode::Left | KeyCode::Char('h'), KeyModifiers::NONE) => {
+            "<LEFT>" | "h" => {
                 self.current_view_mut().move_position(MoveCode::Left);
             }
-            (KeyCode::Home | KeyCode::Char('0'), KeyModifiers::NONE) => {
+            "<HOME>" | "0" => {
                 self.current_view_mut().move_position(MoveCode::FirstChar);
             }
-            (KeyCode::Char('H'), KeyModifiers::SHIFT) => {
+            "H" => {
                 self.current_view_mut()
                     .move_position(MoveCode::FirstNonBlank);
             }
-            (KeyCode::Down | KeyCode::Char('j'), KeyModifiers::NONE) => {
+            "<DOWN>" | "j" => {
                 self.current_view_mut().move_position(MoveCode::Down);
             }
-            (KeyCode::Up | KeyCode::Char('k'), KeyModifiers::NONE) => {
+            "<UP>" | "k" => {
                 self.current_view_mut().move_position(MoveCode::Up);
             }
-            (KeyCode::Right | KeyCode::Char('l'), KeyModifiers::NONE) => {
+            "<RIGHT>" | "l" => {
                 self.current_view_mut().move_position(MoveCode::Right);
             }
-            (KeyCode::End | KeyCode::Char('L'), KeyModifiers::SHIFT) => {
+            "<END>" | "L" => {
                 self.current_view_mut().move_position(MoveCode::LastChar);
             }
-            (KeyCode::Char('g'), KeyModifiers::NONE) => {
+            "g" => {
                 self.current_view_mut().move_position(MoveCode::FirstLine);
             }
-            (KeyCode::Char('G'), KeyModifiers::SHIFT) => {
+            "G" => {
                 self.current_view_mut().move_position(MoveCode::LastLine);
             }
             _ => (),
