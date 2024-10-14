@@ -146,6 +146,34 @@ impl Editor {
         }
     }
 
+    fn key_to_string(code: KeyCode, modifiers: KeyModifiers) -> String {
+        let mut result = match code {
+            KeyCode::Char(' ') => "Space".to_string(),
+            KeyCode::Char(c) => c.to_string(),
+            KeyCode::Enter => "CR".to_string(),
+            KeyCode::Tab => "Tab".to_string(),
+            KeyCode::Backspace => "BS".to_string(),
+            KeyCode::Delete => "Del".to_string(),
+            _ => format!("{code:?}"),
+        };
+
+        if modifiers.contains(KeyModifiers::SHIFT) && result.len() > 1 {
+            result.insert_str(0, "S-");
+        }
+        if modifiers.contains(KeyModifiers::ALT) {
+            result.insert_str(0, "A-");
+        }
+        if modifiers.contains(KeyModifiers::CONTROL) {
+            result.insert_str(0, "C-");
+        }
+
+        if result.len() > 1 {
+            format!("<{}>", result.to_uppercase())
+        } else {
+            result
+        }
+    }
+
     fn set_mode(&mut self, mode: Mode) {
         self.mode = mode;
 
@@ -405,5 +433,30 @@ mod tests {
         assert_eq!(editor.size, Size::default());
         editor.handle_resize_event(10, 10);
         assert_eq!(editor.size, Size::new(10, 10));
+    }
+
+    #[test]
+    fn test_key_to_string() {
+        let str = Editor::key_to_string(KeyCode::Char('a'), KeyModifiers::NONE);
+        assert_eq!(str, "a");
+        let str = Editor::key_to_string(KeyCode::Char('A'), KeyModifiers::SHIFT);
+        assert_eq!(str, "A");
+        let str = Editor::key_to_string(KeyCode::Char('a'), KeyModifiers::CONTROL);
+        assert_eq!(str, "<C-A>");
+        let str = Editor::key_to_string(KeyCode::Char('a'), KeyModifiers::ALT);
+        assert_eq!(str, "<A-A>");
+        let str = Editor::key_to_string(
+            KeyCode::Char('a'),
+            KeyModifiers::ALT | KeyModifiers::CONTROL,
+        );
+        assert_eq!(str, "<C-A-A>");
+        let str = Editor::key_to_string(KeyCode::Char(' '), KeyModifiers::NONE);
+        assert_eq!(str, "<SPACE>");
+        let str = Editor::key_to_string(KeyCode::Left, KeyModifiers::NONE);
+        assert_eq!(str, "<LEFT>");
+        let str = Editor::key_to_string(KeyCode::Enter, KeyModifiers::NONE);
+        assert_eq!(str, "<CR>");
+        let str = Editor::key_to_string(KeyCode::Enter, KeyModifiers::SHIFT);
+        assert_eq!(str, "<S-CR>");
     }
 }
