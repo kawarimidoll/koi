@@ -1,7 +1,7 @@
 {
   description = "koi development environment";
 
-  inputs.nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
   outputs =
     { self, nixpkgs }:
@@ -45,16 +45,11 @@
           };
         in
         {
-          default = pkgs.stdenv.mkDerivation {
-            name = "koi";
+          default = pkgs.rustPlatform.buildRustPackage {
+            pname = "koi";
+            version = "1.0.0";
             src = ./.;
-            buildInputs = with pkgs; [ cargo ];
-            buildPhase = ''
-              cargo build
-            '';
-            installPhase = ''
-              install -D -t $out/bin target/debug/hecto
-            '';
+            cargoLock.lockFile = ./Cargo.lock;
           };
         }
       );
