@@ -1,41 +1,10 @@
+use super::file_info::FileInfo;
 use super::line::Line;
 use super::position::Position;
 use super::size::Size;
 use std::cmp::min;
 use std::fs::{read_to_string, File};
 use std::io::{Error, Write};
-use std::path::{Path, PathBuf};
-
-#[derive(Default)]
-pub struct FileInfo {
-    path: Option<PathBuf>,
-    #[allow(dead_code)]
-    file_type: Option<String>,
-}
-
-impl FileInfo {
-    fn from(path: &str) -> Self {
-        let path = PathBuf::from(path);
-        let file_type = path
-            .extension()
-            .and_then(|ext| ext.to_str())
-            .map(std::string::ToString::to_string);
-        Self {
-            path: Some(path),
-            file_type,
-        }
-    }
-    pub fn has_path(&self) -> bool {
-        self.path.is_some()
-    }
-    pub fn get_path(&self) -> Option<&Path> {
-        self.path.as_deref()
-    }
-    #[allow(dead_code)]
-    pub fn get_file_type(&self) -> Option<String> {
-        self.file_type.clone()
-    }
-}
 
 pub struct Buffer {
     pub lines: Vec<Line>,
@@ -53,10 +22,10 @@ impl Buffer {
     }
     #[cfg(test)]
     pub fn from_string(str: &str) -> Self {
-        let mut buffer = Self::default();
-        buffer.lines = Self::gen_lines(str);
-        buffer.ensure_redraw();
-        buffer
+        Buffer {
+            lines: Self::gen_lines(str),
+            ..Self::default()
+        }
     }
     pub fn load(path: &str) -> Result<Vec<Line>, Error> {
         Ok(Self::gen_lines(&read_to_string(path)?))

@@ -13,6 +13,7 @@ use size::Size;
 use view::{MoveCode, ScrollCode, View};
 mod cursor;
 use cursor::Cursor;
+mod file_info;
 mod line;
 mod text_fragment;
 mod view;
