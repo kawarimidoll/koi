@@ -47,8 +47,8 @@ impl View {
             buffer,
         }
     }
-    pub fn has_filename(&self) -> bool {
-        self.buffer.has_filename()
+    pub fn has_path(&self) -> bool {
+        self.buffer.has_path()
     }
     pub fn save(&mut self) -> Result<(), Error> {
         self.buffer.save()
@@ -91,7 +91,7 @@ impl View {
         }
     }
 
-    pub fn height(&self)->usize{
+    pub fn height(&self) -> usize {
         self.size.height
     }
     pub fn scroll_screen(&mut self, code: ScrollCode) {

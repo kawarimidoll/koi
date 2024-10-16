@@ -4,20 +4,20 @@ use super::size::Size;
 use std::cmp::min;
 use std::fs::{read_to_string, File};
 use std::io::{Error, Write};
+use std::path::{Path, PathBuf};
 
 pub struct Buffer {
     pub lines: Vec<Line>,
     pub needs_redraw: bool,
-    #[allow(dead_code)]
-    filename: Option<String>,
+    path: Option<PathBuf>,
 }
 
 impl Buffer {
-    pub fn from_file(filename: &str) -> Self {
+    pub fn from_file(path: &str) -> Self {
         Self {
-            lines: Self::load(filename).unwrap_or_default(),
+            lines: Self::load(path).unwrap_or_default(),
             needs_redraw: true,
-            filename: Some(filename.to_string()),
+            path: Some(PathBuf::from(path)),
         }
     }
     #[cfg(test)]
@@ -27,8 +27,8 @@ impl Buffer {
         buffer.ensure_redraw();
         buffer
     }
-    pub fn load(filename: &str) -> Result<Vec<Line>, Error> {
-        Ok(Self::gen_lines(&read_to_string(filename)?))
+    pub fn load(path: &str) -> Result<Vec<Line>, Error> {
+        Ok(Self::gen_lines(&read_to_string(path)?))
     }
     pub fn gen_lines(src: &str) -> Vec<Line> {
         src.lines().map(Line::from).collect()
@@ -36,15 +36,18 @@ impl Buffer {
     pub fn ensure_redraw(&mut self) {
         self.needs_redraw = true;
     }
-    pub fn has_filename(&self) -> bool {
-        self.filename.is_some()
+    pub fn has_path(&self) -> bool {
+        self.path.is_some()
     }
-    pub fn save_as(&mut self, filename: &str) -> Result<(), Error> {
-        self.filename = Some(filename.to_string());
+    pub fn get_path(&self) -> Option<&Path> {
+        self.path.as_deref()
+    }
+    pub fn save_as(&mut self, path: &str) -> Result<(), Error> {
+        self.path = Some(PathBuf::from(path));
         self.save()
     }
     pub fn save(&mut self) -> Result<(), Error> {
-        if let Some(path) = &self.filename {
+        if let Some(path) = &self.get_path() {
             let mut file = File::create(path)?;
             for line in &self.lines {
                 writeln!(file, "{}", line.content())?;
@@ -148,7 +151,7 @@ impl Default for Buffer {
         Buffer {
             lines: Vec::new(),
             needs_redraw: true,
-            filename: None,
+            path: None,
         }
     }
 }

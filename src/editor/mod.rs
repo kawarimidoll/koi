@@ -267,7 +267,7 @@ impl Editor {
     }
 
     fn save(&mut self) {
-        if self.current_view().has_filename() {
+        if self.current_view().has_path() {
             let message = match self.current_view_mut().save() {
                 Ok(()) => "File saved successfully",
                 Err(_) => "Error: Saving file failed",
