@@ -1,10 +1,21 @@
 {
   description = "koi development environment";
 
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    git-hooks = {
+      url = "github:cachix/git-hooks.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs-stable.follows = "nixpkgs";
+    };
+  };
 
   outputs =
-    { self, nixpkgs }:
+    {
+      self,
+      nixpkgs,
+      git-hooks,
+    }:
     let
       supportedSystems = [
         "x86_64-linux"
@@ -15,23 +26,39 @@
       forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
     in
     {
+      checks = forAllSystems (system: {
+        pre-commit-check = git-hooks.lib.${system}.run {
+          src = ./.;
+          hooks = {
+            # format nix
+            nixfmt-rfc-style.enable = true;
+            # format markdown
+            denofmt.enable = true;
+            # format rust
+            rustfmt.enable = true;
+            # check github actions yml
+            # actionlint.enable = true;
+          };
+        };
+      });
+
       devShells = forAllSystems (
         system:
         let
-          pkgs = import nixpkgs {
-            inherit system;
-          };
+          pkgs = import nixpkgs { inherit system; };
+          pre-commit-check = self.checks.${system}.pre-commit-check;
         in
         {
           default = pkgs.mkShell {
-            buildInputs = with pkgs; [
-              cargo
-              rustfmt
+            buildInputs = pre-commit-check.enabledPackages ++ [
+              pkgs.cargo
+              pkgs.rustfmt
             ];
             shellHook = ''
               echo "cargo"
               which cargo
               cargo --version
+              ${pre-commit-check.shellHook}
             '';
           };
         }
