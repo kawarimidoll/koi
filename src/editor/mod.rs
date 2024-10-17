@@ -12,7 +12,6 @@ mod size;
 use size::Size;
 use view::{MoveCode, ScrollCode, View};
 mod cursor;
-use cursor::Cursor;
 mod file_info;
 mod line;
 mod text_fragment;
@@ -94,7 +93,7 @@ impl Editor {
         self.message = Some(message.to_string());
     }
     pub fn run(&mut self) {
-        let mut last_cursor = Cursor::default();
+        // let mut last_cursor = Cursor::default();
         loop {
             if self.should_quit {
                 break;
@@ -109,27 +108,9 @@ impl Editor {
                         Mode::Insert => self.handle_key_event_insert(code, modifiers),
                         Mode::Command => self.handle_key_event_command(code, modifiers),
                     }
-                    if self.mode == Mode::Normal && last_cursor != self.current_view().cursor {
-                        self.set_message(&format!(
-                            "cursor: {}, screen: {}, off: {}, [{}], key: {}",
-                            self.current_view().cursor,
-                            self.current_view().caret_screen_position(),
-                            self.current_view().offset,
-                            self.current_view()
-                                .get_fragment_by_position(self.current_view().cursor.position())
-                                .map(|fragment| {
-                                    format!(
-                                        "{}, {}, {}",
-                                        fragment,
-                                        fragment.width(),
-                                        fragment.left_col_width()
-                                    )
-                                })
-                                .unwrap_or_default(),
-                            code,
-                        ));
-                        last_cursor = self.current_view().cursor;
-                    }
+                    // if last_cursor != self.current_view().cursor {
+                    //     cursor moved
+                    // }
                 }
                 Ok(Event::Resize(width16, height16)) => {
                     self.handle_resize_event(width16, height16);
@@ -192,6 +173,26 @@ impl Editor {
         }
     }
 
+    fn show_cursor_info(&mut self) {
+        self.set_message(&format!(
+            "cursor: {}, screen: {}, off: {}, [{}]",
+            self.current_view().cursor,
+            self.current_view().caret_screen_position(),
+            self.current_view().offset,
+            self.current_view()
+                .get_fragment_by_position(self.current_view().cursor.position())
+                .map(|fragment| {
+                    format!(
+                        "{}, {}, {}",
+                        fragment,
+                        fragment.width(),
+                        fragment.left_col_width()
+                    )
+                })
+                .unwrap_or_default(),
+        ));
+    }
+
     fn handle_key_event_nomal(&mut self, code: KeyCode, modifiers: KeyModifiers) {
         let key_repr: &str = &Editor::key_to_string(code, modifiers);
         match key_repr {
@@ -210,6 +211,7 @@ impl Editor {
                 self.set_mode(Mode::Insert);
             }
             "x" => self.current_view_mut().remove_char(),
+            "<C-G>" => self.show_cursor_info(),
             "<C-S>" => self.save(),
             ":" => self.set_mode(Mode::Command),
 
