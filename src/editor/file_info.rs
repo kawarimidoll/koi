@@ -1,3 +1,4 @@
+use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 
 #[derive(Default)]
@@ -19,8 +20,14 @@ impl FileInfo {
     fn file_type_from_path(path: &Path) -> Option<String> {
         if let Some(ext) = path.extension() {
             ext.to_str().map(std::string::ToString::to_string)
+        } else if let Some(file_name) = path.file_name() {
+            match file_name.to_str() {
+                Some(".gitignore") => Some("gitignore".to_string()),
+                Some(".vimrc") => Some("vim".to_string()),
+                // TODO: add other file types
+                _ => None,
+            }
         } else {
-            // TODO: return specific type for files without extension
             None
         }
     }
@@ -29,6 +36,10 @@ impl FileInfo {
     }
     pub fn get_path(&self) -> Option<&Path> {
         self.path.as_deref()
+    }
+    #[allow(dead_code)]
+    pub fn get_file_name(&self) -> Option<&OsStr> {
+        self.path.as_deref().and_then(Path::file_name)
     }
     #[allow(dead_code)]
     pub fn get_file_type(&self) -> Option<String> {
@@ -50,12 +61,13 @@ mod tests {
             fi.get_path(),
             Some(PathBuf::from("/User/home/test.rs").as_ref())
         );
+        assert_eq!(fi.get_file_name(), Some(OsStr::new("test.rs")));
         assert_eq!(fi.get_file_type(), Some("rs".to_string()));
-        // let fi = FileInfo::from(".gitignore");
-        // assert_eq!(fi.get_path(), Some(PathBuf::from(".gitignore").as_ref()));
-        // assert_eq!(fi.get_file_type(), Some("gitignore".to_string()));
-        // let fi = FileInfo::from(".vimrc");
-        // assert_eq!(fi.get_path(), Some(PathBuf::from(".vimrc").as_ref()));
-        // assert_eq!(fi.get_file_type(), Some("vim".to_string()));
+        let fi = FileInfo::from(".gitignore");
+        assert_eq!(fi.get_path(), Some(PathBuf::from(".gitignore").as_ref()));
+        assert_eq!(fi.get_file_type(), Some("gitignore".to_string()));
+        let fi = FileInfo::from(".vimrc");
+        assert_eq!(fi.get_path(), Some(PathBuf::from(".vimrc").as_ref()));
+        assert_eq!(fi.get_file_type(), Some("vim".to_string()));
     }
 }
