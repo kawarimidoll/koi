@@ -41,6 +41,7 @@ pub struct Editor {
     size: Size,
     message: Option<String>,
     command_bar: Option<CommandBar>,
+    needs_redraw_status: bool,
 }
 
 impl Editor {
@@ -68,7 +69,9 @@ impl Editor {
         let size = Terminal::size().unwrap_or_default();
         let view_size = Size {
             width: size.width,
-            height: size.height.saturating_sub(1),
+            // -1 for status bar
+            // -1 for command / message bar
+            height: size.height.saturating_sub(2),
         };
         let view = View::new(buffer, view_size);
         Ok(Self {
@@ -79,6 +82,7 @@ impl Editor {
             size,
             message,
             command_bar: None,
+            needs_redraw_status: true,
         })
     }
 
@@ -98,6 +102,7 @@ impl Editor {
             if self.should_quit {
                 break;
             }
+            self.refresh_status_bar();
             self.refresh_screen();
             match Terminal::read_event() {
                 Ok(Event::Key(KeyEvent {
@@ -156,6 +161,7 @@ impl Editor {
 
     fn set_mode(&mut self, mode: Mode) {
         self.mode = mode;
+        self.needs_redraw_status = true;
 
         match self.mode {
             Mode::Normal => {
@@ -327,6 +333,23 @@ impl Editor {
     fn move_caret(&self) {
         Terminal::move_caret_to(self.current_view().caret_screen_position()).unwrap();
     }
+    fn refresh_status_bar(&mut self) {
+        if !self.needs_redraw_status || self.size.width == 0 || self.size.height == 0 {
+            return;
+        }
+        let line_idx = self.size.height.saturating_sub(2);
+        let line_text = format!(
+            "{mode} | {size}",
+            mode = match self.mode {
+                Mode::Normal => "Normal",
+                Mode::Insert => "Insert",
+                Mode::Command => "Command",
+            },
+            size = self.size,
+        );
+        Terminal::print_row(line_idx, &line_text).unwrap();
+        self.needs_redraw_status = false;
+    }
 
     // NOTE: easy version
     fn handle_key_event_insert(&mut self, code: KeyCode, modifiers: KeyModifiers) {
@@ -443,6 +466,7 @@ mod tests {
             size: Size::default(),
             message: None,
             command_bar: None,
+            needs_redraw_status: true,
         };
         assert_eq!(editor.size, Size::default());
         editor.handle_resize_event(10, 10);
