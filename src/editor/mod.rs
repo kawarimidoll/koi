@@ -105,6 +105,8 @@ impl Editor {
             if self.should_quit {
                 break;
             }
+            let status = DocumentStatus::from(self);
+            self.status_bar.update_status(status);
             self.refresh_screen();
             match Terminal::read_event() {
                 Ok(Event::Key(KeyEvent {
@@ -130,8 +132,6 @@ impl Editor {
                     self.set_message("Unsupported event!");
                 }
             }
-            let status = DocumentStatus::from(self);
-            self.status_bar.update_status(status);
         }
     }
 
