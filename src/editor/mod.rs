@@ -303,7 +303,9 @@ impl Editor {
         self.size = Size { width, height };
         let view_size = Size {
             width,
-            height: height.saturating_sub(1),
+            // -1 for status bar
+            // -1 for command / message bar
+            height: height.saturating_sub(2),
         };
         self.current_view_mut().set_size(view_size);
     }
