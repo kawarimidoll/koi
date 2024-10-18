@@ -78,19 +78,19 @@ mod tests {
     fn test_from() {
         let fi = FileInfo::from("test.txt");
         assert_eq!(fi.get_path(), Some(PathBuf::from("test.txt").as_ref()));
-        assert_eq!(fi.get_file_type(), Some("txt".to_string()));
+        assert_eq!(fi.get_file_type(), Some(FileType::Text));
         let fi = FileInfo::from("/User/home/test.rs");
         assert_eq!(
             fi.get_path(),
             Some(PathBuf::from("/User/home/test.rs").as_ref())
         );
         assert_eq!(fi.get_file_name(), Some(String::from("test.rs")));
-        assert_eq!(fi.get_file_type(), Some("rs".to_string()));
+        assert_eq!(fi.get_file_type(), Some(FileType::Rust));
         let fi = FileInfo::from(".gitignore");
         assert_eq!(fi.get_path(), Some(PathBuf::from(".gitignore").as_ref()));
-        assert_eq!(fi.get_file_type(), Some("gitignore".to_string()));
+        assert_eq!(fi.get_file_type(), Some(FileType::Gitignore));
         let fi = FileInfo::from(".vimrc");
         assert_eq!(fi.get_path(), Some(PathBuf::from(".vimrc").as_ref()));
-        assert_eq!(fi.get_file_type(), Some("vim".to_string()));
+        assert_eq!(fi.get_file_type(), Some(FileType::Vim));
     }
 }
