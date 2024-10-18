@@ -70,7 +70,7 @@ impl StatusBar {
             self.document_status.total_lines_string()
         );
         let line_text = format!("{left} | {right}");
-        Terminal::print_row(line_idx, &line_text)?;
+        Terminal::print_invert_row(line_idx, &line_text)?;
         self.needs_redraw = false;
         Ok(())
     }

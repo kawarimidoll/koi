@@ -4,7 +4,10 @@ pub use crossterm::cursor::SetCursorStyle as CursorStyle;
 use crossterm::cursor::{Hide, MoveTo, Show};
 use crossterm::event::read;
 pub use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
-use crossterm::style::Print;
+use crossterm::style::{
+    Attribute::{Reset, Reverse},
+    Print,
+};
 use crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, size, Clear, ClearType, DisableLineWrap, EnableLineWrap,
     EnterAlternateScreen, LeaveAlternateScreen, SetTitle,
@@ -89,6 +92,15 @@ impl Terminal {
         Self::move_caret_to(Position { line_idx, col_idx })?;
         Self::clear_line()?;
         Self::print(line_text)
+    }
+    pub fn print_invert_row(line_idx: usize, line_text: &str) -> Result<(), Error> {
+        let width = Self::size()?.width;
+        // :width$ -> pad to width
+        // .width$ -> truncate to width
+        Self::print_row(
+            line_idx,
+            &format!("{Reverse}{line_text:width$.width$}{Reset}"),
+        )
     }
     #[allow(clippy::as_conversions)]
     pub fn size() -> Result<Size, Error> {
