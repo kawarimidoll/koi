@@ -9,7 +9,7 @@ use std::io::{Error, Write};
 pub struct Buffer {
     pub lines: Vec<Line>,
     pub needs_redraw: bool,
-    file_info: FileInfo,
+    pub file_info: FileInfo,
 }
 
 impl Buffer {

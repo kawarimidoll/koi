@@ -35,7 +35,7 @@ pub struct View {
 
     size: Size,
     // I don't think View should have buffer as a member, but put it here for now
-    buffer: Buffer,
+    pub buffer: Buffer,
 }
 
 impl View {

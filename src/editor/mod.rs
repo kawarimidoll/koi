@@ -12,7 +12,7 @@ mod size;
 use size::Size;
 use view::{MoveCode, ScrollCode, View};
 mod cursor;
-use status_bar::StatusBar;
+use status_bar::{DocumentStatus, StatusBar};
 mod file_info;
 mod line;
 mod status_bar;
@@ -130,7 +130,8 @@ impl Editor {
                     self.set_message("Unsupported event!");
                 }
             }
-            self.status_bar.update_status(self.mode);
+            let status = DocumentStatus::from(self);
+            self.status_bar.update_status(status);
         }
     }
 

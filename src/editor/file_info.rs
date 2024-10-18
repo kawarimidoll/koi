@@ -4,7 +4,6 @@ use std::path::{Path, PathBuf};
 #[derive(Default)]
 pub struct FileInfo {
     path: Option<PathBuf>,
-    #[allow(dead_code)]
     file_type: Option<String>,
 }
 
@@ -37,7 +36,6 @@ impl FileInfo {
     pub fn get_path(&self) -> Option<&Path> {
         self.path.as_deref()
     }
-    #[allow(dead_code)]
     pub fn get_file_name(&self) -> Option<String> {
         self.path
             .as_deref()
@@ -45,7 +43,6 @@ impl FileInfo {
             .and_then(OsStr::to_str)
             .map(std::string::ToString::to_string)
     }
-    #[allow(dead_code)]
     pub fn get_file_type(&self) -> Option<String> {
         self.file_type.clone()
     }
