@@ -2,6 +2,7 @@ use super::file_info::FileType;
 use super::terminal::Terminal;
 use crate::editor::{Editor, Mode};
 use std::io::Error;
+use unicode_width::UnicodeWidthStr;
 
 #[derive(Default, Eq, PartialEq)]
 pub struct DocumentStatus {
@@ -73,17 +74,21 @@ impl StatusBar {
         }
 
         let left = format!(
-            "{:?} | {}",
+            " {:?} | {}",
             self.document_status.mode,
             self.document_status.file_name_string()
         );
         let right = format!(
-            "{} | {}|{}",
+            "{} | {}|{} ",
             self.document_status.file_type_string(),
             self.document_status.lines_info_string(),
             self.document_status.cols_info_string()
         );
-        let line_text = format!("{left} | {right}");
+
+        let width = Terminal::size().unwrap_or_default().width as usize;
+        // minus 1 for the space between left and right
+        let reminder_len = width.saturating_sub(left.width()).saturating_sub(1);
+        let line_text = format!("{left} {right:>reminder_len$}");
         Terminal::print_invert_row(line_idx, &line_text)?;
         self.needs_redraw = false;
         Ok(())
