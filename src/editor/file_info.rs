@@ -38,8 +38,12 @@ impl FileInfo {
         self.path.as_deref()
     }
     #[allow(dead_code)]
-    pub fn get_file_name(&self) -> Option<&OsStr> {
-        self.path.as_deref().and_then(Path::file_name)
+    pub fn get_file_name(&self) -> Option<String> {
+        self.path
+            .as_deref()
+            .and_then(Path::file_name)
+            .and_then(OsStr::to_str)
+            .map(std::string::ToString::to_string)
     }
     #[allow(dead_code)]
     pub fn get_file_type(&self) -> Option<String> {
@@ -61,7 +65,7 @@ mod tests {
             fi.get_path(),
             Some(PathBuf::from("/User/home/test.rs").as_ref())
         );
-        assert_eq!(fi.get_file_name(), Some(OsStr::new("test.rs")));
+        assert_eq!(fi.get_file_name(), Some(String::from("test.rs")));
         assert_eq!(fi.get_file_type(), Some("rs".to_string()));
         let fi = FileInfo::from(".gitignore");
         assert_eq!(fi.get_path(), Some(PathBuf::from(".gitignore").as_ref()));
