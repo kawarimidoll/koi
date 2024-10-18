@@ -12,8 +12,10 @@ mod size;
 use size::Size;
 use view::{MoveCode, ScrollCode, View};
 mod cursor;
+use status_bar::StatusBar;
 mod file_info;
 mod line;
+mod status_bar;
 mod text_fragment;
 mod view;
 
@@ -22,8 +24,9 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 // TODO tabが含まれる場合の画面端の処理
 
-#[derive(PartialEq)]
+#[derive(Debug, Default, Copy, Clone, Eq, PartialEq)]
 pub enum Mode {
+    #[default]
     Normal,
     Insert,
     Command,
@@ -41,7 +44,7 @@ pub struct Editor {
     size: Size,
     message: Option<String>,
     command_bar: Option<CommandBar>,
-    needs_redraw_status: bool,
+    status_bar: StatusBar,
 }
 
 impl Editor {
@@ -82,7 +85,7 @@ impl Editor {
             size,
             message,
             command_bar: None,
-            needs_redraw_status: true,
+            status_bar: StatusBar::new(),
         })
     }
 
@@ -102,7 +105,6 @@ impl Editor {
             if self.should_quit {
                 break;
             }
-            self.refresh_status_bar();
             self.refresh_screen();
             match Terminal::read_event() {
                 Ok(Event::Key(KeyEvent {
@@ -128,6 +130,7 @@ impl Editor {
                     self.set_message("Unsupported event!");
                 }
             }
+            self.status_bar.update_status(self.mode);
         }
     }
 
@@ -161,7 +164,6 @@ impl Editor {
 
     fn set_mode(&mut self, mode: Mode) {
         self.mode = mode;
-        self.needs_redraw_status = true;
 
         match self.mode {
             Mode::Normal => {
@@ -311,6 +313,7 @@ impl Editor {
         }
         let _ = Terminal::hide_caret();
         let _ = self.current_view_mut().render();
+        let _ = self.status_bar.render(self.size.height.saturating_sub(2));
         if self.command_bar.is_some() {
             let bottom_line = self.size.height.saturating_sub(1);
             let command_bar = self.command_bar.as_mut().unwrap();
@@ -332,23 +335,6 @@ impl Editor {
     }
     fn move_caret(&self) {
         Terminal::move_caret_to(self.current_view().caret_screen_position()).unwrap();
-    }
-    fn refresh_status_bar(&mut self) {
-        if !self.needs_redraw_status || self.size.width == 0 || self.size.height == 0 {
-            return;
-        }
-        let line_idx = self.size.height.saturating_sub(2);
-        let line_text = format!(
-            "{mode} | {size}",
-            mode = match self.mode {
-                Mode::Normal => "Normal",
-                Mode::Insert => "Insert",
-                Mode::Command => "Command",
-            },
-            size = self.size,
-        );
-        Terminal::print_row(line_idx, &line_text).unwrap();
-        self.needs_redraw_status = false;
     }
 
     // NOTE: easy version
@@ -466,7 +452,7 @@ mod tests {
             size: Size::default(),
             message: None,
             command_bar: None,
-            needs_redraw_status: true,
+            status_bar: StatusBar::default(),
         };
         assert_eq!(editor.size, Size::default());
         editor.handle_resize_event(10, 10);
