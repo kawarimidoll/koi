@@ -1,33 +1,55 @@
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 
+#[derive(Eq, PartialEq, Debug, Copy, Clone)]
+pub enum FileType {
+    Rust,
+    Text,
+    Gitignore,
+    Gitcommit,
+    Vim,
+}
+
+impl FileType {
+    pub fn from_ext(ext: &str) -> Option<Self> {
+        match ext {
+            "txt" => Some(FileType::Text),
+            "rs" => Some(FileType::Rust),
+            _ => None,
+        }
+    }
+    pub fn from_file_name(file_name: &str) -> Option<Self> {
+        match file_name {
+            ".gitignore" => Some(FileType::Gitignore),
+            "COMMIT_EDITMSG" => Some(FileType::Gitcommit),
+            ".vimrc" => Some(FileType::Vim),
+            // TODO: add other file types
+            _ => None,
+        }
+    }
+}
+
 #[derive(Default)]
 pub struct FileInfo {
     path: Option<PathBuf>,
-    file_type: Option<String>,
+    file_type: Option<FileType>,
 }
 
 impl FileInfo {
     pub fn from(path: &str) -> Self {
         let path = PathBuf::from(path);
-        let file_type = Self::file_type_from_path(&path);
+        let file_type = path
+            .extension()
+            .and_then(|ext| ext.to_str())
+            .and_then(FileType::from_ext)
+            .or_else(|| {
+                path.file_name()
+                    .and_then(|file_name| FileType::from_file_name(file_name.to_str()?))
+            });
+
         Self {
             path: Some(path),
             file_type,
-        }
-    }
-    fn file_type_from_path(path: &Path) -> Option<String> {
-        if let Some(ext) = path.extension() {
-            ext.to_str().map(std::string::ToString::to_string)
-        } else if let Some(file_name) = path.file_name() {
-            match file_name.to_str() {
-                Some(".gitignore") => Some("gitignore".to_string()),
-                Some(".vimrc") => Some("vim".to_string()),
-                // TODO: add other file types
-                _ => None,
-            }
-        } else {
-            None
         }
     }
     pub fn has_path(&self) -> bool {
@@ -43,8 +65,8 @@ impl FileInfo {
             .and_then(OsStr::to_str)
             .map(std::string::ToString::to_string)
     }
-    pub fn get_file_type(&self) -> Option<String> {
-        self.file_type.clone()
+    pub fn get_file_type(&self) -> Option<FileType> {
+        self.file_type
     }
 }
 

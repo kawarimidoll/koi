@@ -1,3 +1,4 @@
+use super::file_info::FileType;
 use super::terminal::Terminal;
 use crate::editor::{Editor, Mode};
 use std::io::Error;
@@ -5,7 +6,7 @@ use std::io::Error;
 #[derive(Default, Eq, PartialEq)]
 pub struct DocumentStatus {
     file_name: Option<String>,
-    file_type: Option<String>,
+    file_type: Option<FileType>,
     total_lines: usize,
     total_cols: usize,
     current_line_idx: usize,
@@ -35,9 +36,10 @@ impl DocumentStatus {
             .unwrap_or_else(|| String::from("No Name"))
     }
     pub fn file_type_string(&self) -> String {
-        self.file_type
-            .clone()
-            .unwrap_or_else(|| String::from("No Type"))
+        self.file_type.as_ref().map_or_else(
+            || String::from("No Type"),
+            |file_type| format!("{file_type:?}"),
+        )
     }
     pub fn lines_info_string(&self) -> String {
         format!("{}/{}", self.current_line_idx, self.total_lines)
