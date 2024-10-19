@@ -457,8 +457,8 @@ impl Editor {
 impl Drop for Editor {
     fn drop(&mut self) {
         let _ = Terminal::terminate();
-        if self.should_quit {
-            let _ = Terminal::print("Goodbye, koi!\r\n");
+        if !self.should_quit {
+            // TODO: return error code
         }
     }
 }
