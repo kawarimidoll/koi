@@ -204,7 +204,8 @@ impl Editor {
     fn handle_key_event_nomal(&mut self, code: KeyCode, modifiers: KeyModifiers) {
         let key_repr: &str = &Editor::key_to_string(code, modifiers);
         match key_repr {
-            "q" => self.should_quit = true,
+            "q" => self.quit_with_confirm(),
+            "Q" => self.should_quit = true,
             "i" => self.set_mode(Mode::Insert),
             "a" => {
                 self.current_view_mut().move_position(MoveCode::Right);
@@ -294,6 +295,13 @@ impl Editor {
             Err(_) => "Error: Saving file failed",
         };
         self.set_message(message);
+    }
+    fn quit_with_confirm(&mut self) {
+        if self.current_view().buffer.modified_count == 0 {
+            self.should_quit = true;
+        } else {
+            self.set_message("Unsaved changes.");
+        }
     }
 
     #[allow(clippy::as_conversions)]
@@ -404,7 +412,8 @@ impl Editor {
         let (command, args) = prompt.split_once(' ').unwrap_or((prompt, ""));
 
         match command {
-            "q" | "quit" => self.should_quit = true,
+            "q" | "quit" => self.quit_with_confirm(),
+            "q!" | "quit!" => self.should_quit = true,
             "w" | "write" => {
                 if args.is_empty() {
                     self.save();
