@@ -104,6 +104,11 @@ impl Buffer {
         self.increase_modified_count();
         self.ensure_redraw();
     }
+    pub fn remove_line(&mut self, line_idx: usize) {
+        self.lines.remove(line_idx);
+        self.increase_modified_count();
+        self.ensure_redraw();
+    }
     pub fn insert(&mut self, str: &str, at: Position) -> bool {
         let Position { line_idx, col_idx } = at;
 
