@@ -1,4 +1,5 @@
 use super::terminal::Terminal;
+use super::Mode;
 use std::io::Error;
 use unicode_width::UnicodeWidthStr;
 
@@ -7,14 +8,18 @@ pub struct CommandBar {
     value: String,
     needs_redraw: bool,
     pub caret_col: usize,
+    pub mode: Mode,
 }
 impl CommandBar {
-    pub fn new(prompt: &str) -> Self {
+    pub fn new(mode: Mode) -> Self {
+        debug_assert!(mode == Mode::Command || mode == Mode::Search);
+        let prompt = if mode == Mode::Command { ":" } else { "/" };
         Self {
             prompt: prompt.to_string(),
             value: String::default(),
             needs_redraw: true,
             caret_col: prompt.width(),
+            mode,
         }
     }
     pub fn insert(&mut self, c: char) {

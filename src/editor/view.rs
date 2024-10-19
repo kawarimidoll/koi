@@ -189,6 +189,9 @@ impl View {
         self.buffer
             .render(self.size, self.offset, Terminal::print_row)
     }
+    pub fn search(&self, _query: &str) {
+        // TODO
+    }
 }
 
 #[cfg(test)]

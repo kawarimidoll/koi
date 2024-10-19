@@ -30,6 +30,7 @@ pub enum Mode {
     Normal,
     Insert,
     Command,
+    Search,
 }
 
 // 将来的にはEditorは複数のViewとBufferを持つ
@@ -115,7 +116,9 @@ impl Editor {
                     match self.mode {
                         Mode::Normal => self.handle_key_event_nomal(code, modifiers),
                         Mode::Insert => self.handle_key_event_insert(code, modifiers),
-                        Mode::Command => self.handle_key_event_command(code, modifiers),
+                        Mode::Command | Mode::Search => {
+                            self.handle_key_event_command(code, modifiers)
+                        }
                     }
                     // if last_cursor != self.current_view().cursor {
                     //     cursor moved
@@ -174,9 +177,9 @@ impl Editor {
             Mode::Insert => {
                 Terminal::set_cursor_style(CursorStyle::SteadyBar).unwrap();
             }
-            Mode::Command => {
+            Mode::Command | Mode::Search => {
                 Terminal::set_cursor_style(CursorStyle::SteadyBar).unwrap();
-                self.command_bar = Some(CommandBar::new(":"));
+                self.command_bar = Some(CommandBar::new(self.mode));
             }
         }
     }
@@ -233,6 +236,13 @@ impl Editor {
             "<C-G>" => self.show_cursor_info(),
             "<C-S>" => self.save(),
             ":" => self.set_mode(Mode::Command),
+            "/" => self.set_mode(Mode::Search),
+            "n" => {
+                self.set_message("TODO: search next");
+            }
+            "N" => {
+                self.set_message("TODO: search prev");
+            }
 
             "<S-LEFT>" => {
                 self.current_view_mut().scroll_screen(ScrollCode::Left(1));
@@ -400,14 +410,13 @@ impl Editor {
                 self.command_bar.as_mut().unwrap().insert(c);
             }
             (KeyCode::Enter, KeyModifiers::NONE) => {
-                let value = self
-                    .command_bar
-                    .as_ref()
-                    .unwrap()
-                    .value()
-                    .trim()
-                    .to_string();
-                self.run_command(&value);
+                let value = self.command_bar.as_ref().unwrap().value().to_string();
+                if self.command_bar.as_ref().unwrap().mode == Mode::Command {
+                    self.run_command(&value.trim());
+                } else {
+                    self.current_view().search(&value);
+                    self.set_message(&format!("search: {value}"));
+                }
                 self.set_mode(Mode::Normal);
             }
             (KeyCode::Backspace, KeyModifiers::NONE)
