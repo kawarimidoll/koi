@@ -173,7 +173,6 @@ impl Editor {
             }
             Mode::Insert => {
                 Terminal::set_cursor_style(CursorStyle::SteadyBar).unwrap();
-                self.set_message("[ insert ]");
             }
             Mode::Command => {
                 Terminal::set_cursor_style(CursorStyle::SteadyBar).unwrap();
@@ -349,19 +348,15 @@ impl Editor {
             }
             (KeyCode::Char(c), KeyModifiers::NONE | KeyModifiers::SHIFT) => {
                 self.current_view_mut().insert_char(c);
-                self.insert_message(&c.to_string());
             }
             (KeyCode::Tab, KeyModifiers::NONE) => {
                 self.current_view_mut().insert_char('\t');
-                self.insert_message("Tab");
             }
             (KeyCode::Enter, KeyModifiers::NONE) => {
                 self.current_view_mut().insert_char('\n');
-                self.insert_message("Enter");
             }
             (KeyCode::Delete, KeyModifiers::NONE) => {
                 self.current_view_mut().remove_char();
-                self.insert_message("Delete");
             }
             (KeyCode::Backspace, KeyModifiers::NONE)
             | (KeyCode::Char('h'), KeyModifiers::CONTROL) => {
@@ -372,19 +367,10 @@ impl Editor {
                 {
                     self.current_view_mut().move_position(MoveCode::Left);
                     self.current_view_mut().remove_char();
-                    self.insert_message("Backspace");
                 }
             }
             _ => (),
         }
-    }
-    fn insert_message(&mut self, input: &str) {
-        let line = self
-            .current_view()
-            .get_line(self.current_view().cursor.line_idx())
-            .map_or("no line", line::Line::content);
-
-        self.set_message(&format!("[ insert ] input: {input}, content: {line}"));
     }
 
     fn handle_key_event_command(&mut self, code: KeyCode, modifiers: KeyModifiers) {
