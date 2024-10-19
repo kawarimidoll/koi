@@ -18,18 +18,16 @@ pub struct DocumentStatus {
 
 impl DocumentStatus {
     pub fn from(editor: &Editor) -> Self {
-        let current_line_idx = editor.current_view().cursor.line_idx();
+        let cursor = &editor.current_view().cursor;
+        let buffer = &editor.current_view().buffer;
         DocumentStatus {
-            file_name: editor.current_view().buffer.file_info.get_file_name(),
-            file_type: editor.current_view().buffer.file_info.get_file_type(),
-            total_lines: editor.current_view().buffer.get_lines_count(),
-            total_cols: editor
-                .current_view()
-                .buffer
-                .get_line_col_width(current_line_idx),
-            current_line_idx,
-            current_col_idx: editor.current_view().cursor.col_idx(),
-            modified: editor.current_view().buffer.modified_count != 0,
+            file_name: buffer.file_info.get_file_name(),
+            file_type: buffer.file_info.get_file_type(),
+            total_lines: buffer.get_lines_count(),
+            total_cols: buffer.get_line_col_width(cursor.line_idx()),
+            current_line_idx: cursor.line_idx(),
+            current_col_idx: cursor.col_idx(),
+            modified: buffer.modified_count != 0,
             mode: editor.mode,
         }
     }
