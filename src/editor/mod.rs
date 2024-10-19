@@ -363,7 +363,8 @@ impl Editor {
                 self.current_view_mut().remove_char();
                 self.insert_message("Delete");
             }
-            (KeyCode::Backspace, KeyModifiers::NONE) => {
+            (KeyCode::Backspace, KeyModifiers::NONE)
+            | (KeyCode::Char('h'), KeyModifiers::CONTROL) => {
                 // just detect if the caret is at the beginning of the buffer
                 // so we don't need to use caret_screen_position() here
                 if self.current_view().cursor.col_idx() > 0
@@ -405,7 +406,8 @@ impl Editor {
                 self.run_command(&value);
                 self.set_mode(Mode::Normal);
             }
-            (KeyCode::Backspace, KeyModifiers::NONE) => {
+            (KeyCode::Backspace, KeyModifiers::NONE)
+            | (KeyCode::Char('h'), KeyModifiers::CONTROL) => {
                 self.command_bar.as_mut().unwrap().delete_backward();
             }
             _ => (),
