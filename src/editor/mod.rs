@@ -114,7 +114,7 @@ impl Editor {
                     code, modifiers, ..
                 })) => {
                     match self.mode {
-                        Mode::Normal => self.handle_key_event_nomal(code, modifiers),
+                        Mode::Normal => self.handle_key_event_normal(code, modifiers),
                         Mode::Insert => self.handle_key_event_insert(code, modifiers),
                         Mode::Command | Mode::Search => {
                             self.handle_key_event_command(code, modifiers)
@@ -204,7 +204,7 @@ impl Editor {
         ));
     }
 
-    fn handle_key_event_nomal(&mut self, code: KeyCode, modifiers: KeyModifiers) {
+    fn handle_key_event_normal(&mut self, code: KeyCode, modifiers: KeyModifiers) {
         let key_repr: &str = &Editor::key_to_string(code, modifiers);
         match key_repr {
             "q" => self.quit_with_confirm(),
