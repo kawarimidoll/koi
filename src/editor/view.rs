@@ -63,6 +63,11 @@ impl View {
     pub fn caret_screen_position(&self) -> Position {
         self.cursor.get_screen_position(&self.offset)
     }
+    // pub fn get_current_line_content(&self) -> String {
+    //     self.get_line(self.cursor.line_idx())
+    //         .map(|line| line.content().to_string())
+    //         .unwrap_or_default()
+    // }
     pub fn get_line(&self, line_idx: usize) -> Option<&Line> {
         self.buffer.lines.get(line_idx)
     }

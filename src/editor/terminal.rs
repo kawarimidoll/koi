@@ -102,6 +102,11 @@ impl Terminal {
             &format!("{Reverse}{line_text:width$.width$}{Reset}"),
         )
     }
+    // pub fn print_at(at: Position, width:usize, line_text: &str) -> Result<(), Error> {
+    //     Self::move_caret_to(at)?;
+    //     Self::print(&" ".repeat(width))?;
+    //     Self::print(line_text)
+    // }
     #[allow(clippy::as_conversions)]
     pub fn size() -> Result<Size, Error> {
         let (width16, height16) = size()?;

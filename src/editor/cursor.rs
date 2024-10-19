@@ -33,6 +33,10 @@ impl Cursor {
             .get_fragment_by_col_idx(self.col_want)
             .map_or_else(|| line.col_width(), TextFragment::left_col_width);
     }
+    // pub fn ensure_on_line(&mut self, current_buffer: &Buffer) {
+    //     self.set_line_idx(self.line_idx, current_buffer);
+    //     self.set_col_idx(self.col_idx, current_buffer);
+    // }
     #[cfg(test)]
     pub fn set_position(&mut self, position: Position, current_buffer: &Buffer) {
         self.set_line_idx(position.line_idx, current_buffer);
