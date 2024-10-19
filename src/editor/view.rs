@@ -85,6 +85,17 @@ impl View {
             self.move_position(MoveCode::Right);
         }
     }
+    pub fn insert_char_without_move(&mut self, c: char) {
+        if c == '\n' {
+            if self.buffer.insert_newline(self.cursor.position()) {
+                self.ensure_redraw();
+            }
+            return;
+        }
+        if self.buffer.insert(&c.to_string(), self.cursor.position()) {
+            self.ensure_redraw();
+        }
+    }
     pub fn remove_char(&mut self) {
         if self.buffer.remove_char(self.cursor.position()) {
             self.ensure_redraw();

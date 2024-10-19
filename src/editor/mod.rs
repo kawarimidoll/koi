@@ -219,6 +219,16 @@ impl Editor {
                 self.current_view_mut().move_position(MoveCode::LastChar);
                 self.set_mode(Mode::Insert);
             }
+            "o" => {
+                self.current_view_mut().move_position(MoveCode::LastChar);
+                self.set_mode(Mode::Insert);
+                self.current_view_mut().insert_char('\n');
+            }
+            "O" => {
+                self.current_view_mut().move_position(MoveCode::FirstChar);
+                self.set_mode(Mode::Insert);
+                self.current_view_mut().insert_char_without_move('\n');
+            }
             "x" => self.current_view_mut().remove_char(),
             "<C-G>" => self.show_cursor_info(),
             "<C-S>" => self.save(),
