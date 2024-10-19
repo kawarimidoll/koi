@@ -440,6 +440,14 @@ impl Editor {
                     self.save_as(args);
                 }
             }
+            "wq" => {
+                if args.is_empty() {
+                    self.save();
+                } else {
+                    self.save_as(args);
+                }
+                self.should_quit = true;
+            }
             "echo" => self.set_message(args),
             _ => self.set_message(&format!("Unknown command: {command}")),
         }
