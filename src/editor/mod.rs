@@ -234,6 +234,32 @@ impl Editor {
                 self.set_mode(Mode::Insert);
                 self.current_view_mut().insert_char_without_move('\n');
             }
+            "c" => {
+                // TODO: implement c{motion}
+                // it should be cc
+                let line_idx = self.current_view_mut().cursor.line_idx();
+                self.current_view_mut().buffer.set_line("", line_idx);
+                self.current_view_mut().move_position(MoveCode::FirstChar);
+                self.set_mode(Mode::Insert);
+            }
+            "d" => {
+                // TODO: implement d{motion}
+                // it should be dd
+                let line_idx = self.current_view_mut().cursor.line_idx();
+                self.current_view_mut().buffer.set_line("", line_idx);
+                self.current_view_mut().move_position(MoveCode::FirstChar);
+            }
+            "C" => {
+                let at = self.current_view_mut().cursor.position();
+                self.current_view_mut().buffer.cutoff_line(at);
+                self.current_view_mut().move_position(MoveCode::LastChar);
+                self.set_mode(Mode::Insert);
+            }
+            "D" => {
+                let at = self.current_view_mut().cursor.position();
+                self.current_view_mut().buffer.cutoff_line(at);
+                self.current_view_mut().move_position(MoveCode::LastChar);
+            }
             "x" => self.current_view_mut().remove_char(),
             "<C-G>" => self.show_cursor_info(),
             "<C-S>" => self.save(),

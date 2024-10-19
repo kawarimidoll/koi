@@ -109,6 +109,16 @@ impl Buffer {
         self.increase_modified_count();
         self.ensure_redraw();
     }
+    pub fn cutoff_line(&mut self, at: Position) {
+        let Position { line_idx, col_idx } = at;
+        if line_idx >= self.get_lines_count() {
+            return;
+        }
+        // we have a valid line_idx
+        self.lines[line_idx].split_off(col_idx);
+        self.increase_modified_count();
+        self.ensure_redraw();
+    }
     pub fn insert(&mut self, str: &str, at: Position) -> bool {
         let Position { line_idx, col_idx } = at;
 
