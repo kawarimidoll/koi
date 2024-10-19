@@ -93,6 +93,17 @@ impl Buffer {
         self.modified_count = self.modified_count.saturating_add(1);
     }
 
+    // TODO add test
+    pub fn set_line(&mut self, str: &str, line_idx: usize) {
+        let line = Line::from(str);
+        if line_idx >= self.get_lines_count() {
+            self.lines.push(line);
+        } else {
+            self.lines[line_idx] = line;
+        }
+        self.increase_modified_count();
+        self.ensure_redraw();
+    }
     pub fn insert(&mut self, str: &str, at: Position) -> bool {
         let Position { line_idx, col_idx } = at;
 
