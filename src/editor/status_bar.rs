@@ -54,11 +54,13 @@ impl DocumentStatus {
 pub struct StatusBar {
     document_status: DocumentStatus,
     needs_redraw: bool,
+    width: usize,
 }
 impl StatusBar {
-    pub fn new() -> Self {
+    pub fn new(width: usize) -> Self {
         Self {
             needs_redraw: true,
+            width,
             ..Self::default()
         }
     }
@@ -67,6 +69,10 @@ impl StatusBar {
             self.document_status = status;
             self.needs_redraw = true;
         }
+    }
+    pub fn set_size(&mut self, width: usize) {
+        self.width = width;
+        self.needs_redraw = true;
     }
     pub fn render(&mut self, line_idx: usize) -> Result<(), Error> {
         if !self.needs_redraw {
@@ -85,10 +91,10 @@ impl StatusBar {
             self.document_status.cols_info_string()
         );
 
-        let width = Terminal::size().unwrap_or_default().width as usize;
         // minus 1 for the space between left and right
-        let reminder_len = width.saturating_sub(left.width()).saturating_sub(1);
-        let line_text = format!("{left} {right:>reminder_len$}");
+        let reminder_len = self.width.saturating_sub(left.width()).saturating_sub(1);
+        let mut line_text = format!("{left} {right:>reminder_len$}");
+        line_text.truncate(self.width);
         Terminal::print_invert_row(line_idx, &line_text)?;
         self.needs_redraw = false;
         Ok(())

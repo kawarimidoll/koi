@@ -85,7 +85,7 @@ impl Editor {
             size,
             message,
             command_bar: None,
-            status_bar: StatusBar::new(),
+            status_bar: StatusBar::new(size.width),
         })
     }
 
@@ -309,6 +309,7 @@ impl Editor {
             height: height.saturating_sub(2),
         };
         self.current_view_mut().set_size(view_size);
+        self.status_bar.set_size(width);
     }
     fn refresh_screen(&mut self) {
         if self.size.width == 0 || self.size.height == 0 {
