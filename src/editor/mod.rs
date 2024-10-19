@@ -38,6 +38,7 @@ pub enum Mode {
 // 将来的にはEditorは複数のViewとBufferを持つ
 // それぞれのViewはBufferを参照する
 // Editorは現在どのViewにフォーカスしているかの情報を持つ
+#[derive(Default)]
 pub struct Editor {
     should_quit: bool,
     // buffer: Buffer,
@@ -45,6 +46,8 @@ pub struct Editor {
     current_view_idx: usize,
     mode: Mode,
     size: Size,
+    #[allow(dead_code)]
+    register: Option<String>,
     message: Option<String>,
     command_bar: Option<CommandBar>,
     status_bar: StatusBar,
@@ -80,16 +83,12 @@ impl Editor {
             height: size.height.saturating_sub(2),
         };
         let view = View::new(buffer, view_size);
-        Ok(Self {
-            should_quit: false,
-            views: vec![view],
-            current_view_idx: 0,
-            mode: Mode::Normal,
-            size,
-            message,
-            command_bar: None,
-            status_bar: StatusBar::new(size.width),
-        })
+        let mut editor = Self::default();
+        editor.views = vec![view];
+        editor.size = size;
+        editor.message = message;
+        editor.status_bar = StatusBar::new(size.width);
+        Ok(editor)
     }
 
     fn current_view(&self) -> &View {
@@ -527,16 +526,8 @@ mod tests {
         let buffer = Buffer::from_string("this\nis\ntest.\n");
         let size = Size::new(10, 10);
         let view = View::new(buffer, size);
-        let mut editor = Editor {
-            should_quit: false,
-            views: vec![view],
-            current_view_idx: 0,
-            mode: Mode::Normal,
-            size: Size::default(),
-            message: None,
-            command_bar: None,
-            status_bar: StatusBar::default(),
-        };
+        let mut editor = Editor::default();
+        editor.views = vec![view];
         assert_eq!(editor.size, Size::default());
         editor.handle_resize_event(10, 10);
         assert_eq!(editor.size, Size::new(10, 10));
