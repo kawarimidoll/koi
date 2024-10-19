@@ -10,14 +10,15 @@ pub struct Buffer {
     pub lines: Vec<Line>,
     pub needs_redraw: bool,
     pub file_info: FileInfo,
+    pub modified_count: usize,
 }
 
 impl Buffer {
     pub fn from_file(path: &str) -> Self {
         Self {
             lines: Self::load(path).unwrap_or_default(),
-            needs_redraw: true,
             file_info: FileInfo::from(path),
+            ..Self::default()
         }
     }
     #[cfg(test)]
@@ -49,6 +50,7 @@ impl Buffer {
             for line in &self.lines {
                 writeln!(file, "{}", line.content())?;
             }
+            self.modified_count = 0;
             Ok(())
         } else {
             Err(Error::new(std::io::ErrorKind::Other, "No file path"))
@@ -87,6 +89,10 @@ impl Buffer {
         self.lines.len()
     }
 
+    fn increase_modified_count(&mut self) {
+        self.modified_count = self.modified_count.saturating_add(1);
+    }
+
     pub fn insert(&mut self, str: &str, at: Position) -> bool {
         let Position { line_idx, col_idx } = at;
 
@@ -95,20 +101,18 @@ impl Buffer {
             return false;
         }
 
-        // append a new line
         if line_idx == self.get_lines_count() {
+            // append a new line
             self.lines.push(Line::from(str));
-            return true;
-        }
-
-        // insert a new character in an existing line
-        if let Some(line) = self.lines.get_mut(line_idx) {
+        } else if let Some(line) = self.lines.get_mut(line_idx) {
+            // insert a new character in an existing line
             line.insert(col_idx, str);
-            return true;
+        } else {
+            // maybe dead code, but the compiler doesn't know that
+            return false;
         }
-
-        // maybe dead code, but the compiler doesn't know that
-        false
+        self.increase_modified_count();
+        true
     }
     pub fn insert_newline(&mut self, at: Position) -> bool {
         let Position { line_idx, col_idx } = at;
@@ -119,6 +123,7 @@ impl Buffer {
             let second_half = self.lines[line_idx].split_off(col_idx);
             self.lines.insert(line_idx.saturating_add(1), second_half);
         }
+        self.increase_modified_count();
         true
     }
     pub fn remove_char(&mut self, at: Position) -> bool {
@@ -140,6 +145,7 @@ impl Buffer {
             // the last line, the last character
             return false;
         }
+        self.increase_modified_count();
         true
     }
 }
@@ -149,6 +155,7 @@ impl Default for Buffer {
             lines: Vec::new(),
             needs_redraw: true,
             file_info: FileInfo::default(),
+            modified_count: 0,
         }
     }
 }

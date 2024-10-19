@@ -12,6 +12,7 @@ pub struct DocumentStatus {
     total_cols: usize,
     current_line_idx: usize,
     current_col_idx: usize,
+    modified: bool,
     mode: Mode,
 }
 
@@ -28,6 +29,7 @@ impl DocumentStatus {
                 .get_line_col_width(current_line_idx),
             current_line_idx,
             current_col_idx: editor.current_view().cursor.col_idx(),
+            modified: editor.current_view().buffer.modified_count != 0,
             mode: editor.mode,
         }
     }
@@ -35,6 +37,13 @@ impl DocumentStatus {
         self.file_name
             .clone()
             .unwrap_or_else(|| String::from("No Name"))
+    }
+    pub fn modified_string(&self) -> String {
+        if self.modified {
+            String::from("(modified)")
+        } else {
+            String::default()
+        }
     }
     pub fn file_type_string(&self) -> String {
         self.file_type.as_ref().map_or_else(
@@ -80,9 +89,10 @@ impl StatusBar {
         }
 
         let left = format!(
-            " {:?} | {}",
+            " {:?} | {} {}",
             self.document_status.mode,
-            self.document_status.file_name_string()
+            self.document_status.file_name_string(),
+            self.document_status.modified_string()
         );
         let right = format!(
             "{} | {}|{} ",
