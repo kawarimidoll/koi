@@ -14,6 +14,8 @@ use view::{MoveCode, ScrollCode, View};
 mod cursor;
 use status_bar::{DocumentStatus, StatusBar};
 mod file_info;
+use file_info::FileType;
+use regex::Regex;
 mod line;
 mod status_bar;
 mod text_fragment;
@@ -293,6 +295,33 @@ impl Editor {
             }
             "G" => {
                 self.current_view_mut().move_position(MoveCode::LastLine);
+            }
+            "<CR>" => {
+                // TODO this should be in user local config
+                if self.current_view().buffer.file_info.get_file_type() == Some(FileType::Gitcommit)
+                {
+                    let line_idx = self.current_view().cursor.line_idx();
+                    if let Some(line) = self.current_view().get_line(line_idx) {
+                        let re = Regex::new(r"^# (\w+)\s+.*$").unwrap();
+                        let content = re.replace(line.content(), "$1: ").to_string();
+                        let height = self.current_view().height();
+                        self.current_view_mut()
+                            .scroll_screen(ScrollCode::Up(height));
+                        // remove line until line.content() is empty
+                        let lines_count = self.current_view().buffer.get_lines_count();
+                        for _ in 0..lines_count {
+                            if let Some(l) = self.current_view().get_line(0) {
+                                if l.content().is_empty() {
+                                    break;
+                                }
+                            }
+                            self.current_view_mut().buffer.remove_line(0);
+                        }
+                        self.current_view_mut().buffer.set_line(&content, 0);
+                        self.current_view_mut().move_position(MoveCode::LastChar);
+                        self.set_mode(Mode::Insert);
+                    }
+                }
             }
             _ => (),
         }
