@@ -138,6 +138,7 @@ impl Buffer {
             return false;
         }
         self.increase_modified_count();
+        self.ensure_redraw();
         true
     }
     pub fn insert_newline(&mut self, at: Position) -> bool {

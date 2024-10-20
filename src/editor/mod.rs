@@ -9,6 +9,7 @@ mod position;
 use command_bar::CommandBar;
 mod command_bar;
 mod size;
+use line::Line;
 use size::Size;
 use view::{MoveCode, ScrollCode, View};
 mod cursor;
@@ -258,6 +259,25 @@ impl Editor {
                 let at = self.current_view_mut().cursor.position();
                 self.current_view_mut().buffer.cutoff_line(at);
                 self.current_view_mut().move_position(MoveCode::LastChar);
+            }
+            "p" => {
+                let str = "sample_str";
+                self.current_view_mut().move_position(MoveCode::Right);
+                let at = self.current_view_mut().cursor.position();
+                self.current_view_mut().buffer.insert(str, at);
+                let count = Line::string_to_graphemes(str).count();
+                for _ in 0..count.saturating_sub(1) {
+                    self.current_view_mut().move_position(MoveCode::Right);
+                }
+            }
+            "P" => {
+                let str = "sample_str";
+                let at = self.current_view_mut().cursor.position();
+                self.current_view_mut().buffer.insert(str, at);
+                let count = Line::string_to_graphemes(str).count();
+                for _ in 0..count {
+                    self.current_view_mut().move_position(MoveCode::Right);
+                }
             }
             "x" => self.current_view_mut().remove_char(),
             "<C-G>" => self.show_cursor_info(),
