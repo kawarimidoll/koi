@@ -47,7 +47,6 @@ pub struct Editor {
     current_view_idx: usize,
     mode: Mode,
     size: Size,
-    #[allow(dead_code)]
     register: Option<String>,
     message: Option<String>,
     command_bar: Option<CommandBar>,
@@ -260,21 +259,39 @@ impl Editor {
                 self.current_view_mut().buffer.cutoff_line(at);
                 self.current_view_mut().move_position(MoveCode::LastChar);
             }
+            "y" => {
+                // TODO: implement y{motion}
+                // it should be yy
+                let content = self.current_view_mut().get_current_line_content();
+                self.register = Some(content);
+            }
+            "Y" => {
+                let content = self.current_view_mut().get_current_line_content();
+                self.register = Some(content);
+            }
             "p" => {
-                let str = "sample_str";
+                if self.register.is_none() {
+                    self.set_message("Register is empty");
+                    return;
+                }
+                let str = self.register.as_ref().unwrap().clone();
                 self.current_view_mut().move_position(MoveCode::Right);
                 let at = self.current_view_mut().cursor.position();
-                self.current_view_mut().buffer.insert(str, at);
-                let count = Line::string_to_graphemes(str).count();
+                self.current_view_mut().buffer.insert(&str, at);
+                let count = Line::string_to_graphemes(&str).count();
                 for _ in 0..count.saturating_sub(1) {
                     self.current_view_mut().move_position(MoveCode::Right);
                 }
             }
             "P" => {
-                let str = "sample_str";
+                if self.register.is_none() {
+                    self.set_message("Register is empty");
+                    return;
+                }
+                let str = self.register.as_ref().unwrap().clone();
                 let at = self.current_view_mut().cursor.position();
-                self.current_view_mut().buffer.insert(str, at);
-                let count = Line::string_to_graphemes(str).count();
+                self.current_view_mut().buffer.insert(&str, at);
+                let count = Line::string_to_graphemes(&str).count();
                 for _ in 0..count {
                     self.current_view_mut().move_position(MoveCode::Right);
                 }
