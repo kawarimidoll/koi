@@ -1,6 +1,6 @@
 use super::text_fragment::TextFragment;
 use std::ops::Range;
-use unicode_segmentation::UnicodeSegmentation;
+use unicode_segmentation::{Graphemes, UnicodeSegmentation};
 
 // https://rust-lang.github.io/rust-clippy/master/index.html#/format_collect
 use std::fmt::Write;
@@ -25,11 +25,12 @@ impl Line {
         line.rebuild_fragments();
         line
     }
+    pub fn string_to_graphemes(string: &str) -> Graphemes<'_> {
+        string.graphemes(true)
+    }
     fn rebuild_fragments(&mut self) {
         let mut left_col_width = 0;
-        self.fragments = self
-            .string
-            .graphemes(true)
+        self.fragments = Self::string_to_graphemes(&self.string)
             .map(|grapheme| {
                 let fragment = TextFragment::new(grapheme, left_col_width);
                 left_col_width = left_col_width.saturating_add(fragment.width());
