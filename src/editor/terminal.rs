@@ -1,9 +1,13 @@
 use super::position::Position;
 use super::size::Size;
+use std::io::{stdout, Error, Write};
+
+// all crossterm modules should be imported from this file
 pub use crossterm::cursor::SetCursorStyle as CursorStyle;
 use crossterm::cursor::{Hide, MoveTo, Show};
 use crossterm::event::read;
 pub use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
+pub use crossterm::style::Color;
 use crossterm::style::{
     Attribute::{Reset, Reverse},
     Print,
@@ -13,7 +17,6 @@ use crossterm::terminal::{
     EnterAlternateScreen, LeaveAlternateScreen, SetTitle,
 };
 use crossterm::{queue, Command};
-use std::io::{stdout, Error, Write};
 
 pub struct Terminal {}
 

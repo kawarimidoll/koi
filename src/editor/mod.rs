@@ -17,6 +17,7 @@ use status_bar::{DocumentStatus, StatusBar};
 mod file_info;
 use file_info::FileType;
 use regex::Regex;
+mod hex_color;
 mod line;
 mod status_bar;
 mod text_fragment;
