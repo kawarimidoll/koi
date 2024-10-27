@@ -7,6 +7,9 @@ pub enum FileType {
     Text,
     Gitignore,
     Gitcommit,
+    Markdown,
+    Toml,
+    Nix,
     Vim,
 }
 
@@ -15,6 +18,9 @@ impl FileType {
         match ext {
             "txt" => Some(FileType::Text),
             "rs" => Some(FileType::Rust),
+            "md" => Some(FileType::Markdown),
+            "toml" => Some(FileType::Toml),
+            "nix" => Some(FileType::Nix),
             _ => None,
         }
     }
@@ -23,6 +29,7 @@ impl FileType {
             ".gitignore" => Some(FileType::Gitignore),
             "COMMIT_EDITMSG" => Some(FileType::Gitcommit),
             ".vimrc" => Some(FileType::Vim),
+            "Cargo.lock" => Some(FileType::Toml),
             // TODO: add other file types
             _ => None,
         }
